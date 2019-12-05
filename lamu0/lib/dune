@@ -1,0 +1,3 @@
+(library
+ (name lamu0)
+ (preprocess (pps ppx_deriving.show)))

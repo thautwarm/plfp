@@ -1,0 +1,4 @@
+(executable
+ (public_name lamu0)
+ (name main)
+ (libraries lamu0))
