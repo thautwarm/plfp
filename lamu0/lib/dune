@@ -1,3 +1,4 @@
 (library
  (name lamu0)
+ (libraries remu_ts remu_scope)
  (preprocess (pps ppx_deriving.show)))
