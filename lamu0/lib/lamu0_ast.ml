@@ -1,6 +1,4 @@
 open Final
-module Map = BatMap
-type ('k, 'v) map = ('k, 'v) Map.t
 
 module Scoping = Remu_scope.Solve
 
@@ -18,10 +16,10 @@ module type STScope = sig
   val cur_scoperef : Scoping.scoperef ref
   val combine: o -> c -> r
   val project: r -> o
-  val get: r -> c
+  val get: r -> scopeinfo
 end
 
-module FSYMScope(ST : STScope):FSYM = struct
+module FSYMScope(ST : STScope) = struct
   include ST
 
   let subscope () = Scoping.subscope ST.env (!ST.cur_scoperef)
@@ -89,7 +87,7 @@ end
 
 
 exception TypeError
-module FSYMType(ST: STType):FSYM = struct
+module FSYMType(ST: STType) = struct
   include ST
   module TC = (val tc)
   open TC
@@ -112,37 +110,59 @@ module FSYMType(ST: STType):FSYM = struct
     let var_of_ret = new_tvar() in
     let var_of_arg = new_tvar() in
     if unify (rtype f) (Typing.Arrow (var_of_arg, var_of_ret)) &&
-       unify (rtype a) var_of_ret then
+       unify (rtype a) var_of_arg then
        var_of_ret
     else
-      raise TypeError end
+       raise TypeError end
   let lit _ lt v = lazy begin
       match lt with
       | StringT -> strt
       | IntT -> intt
       | FloatT -> floatt end
-  let var o n = lazy (ntype o n)
+  let var o n =
+     lazy begin
+       let var1 = new_tvar() in
+       let var2 = ntype o n in
+       if unify var1 var2 then var1
+       else raise TypeError
+     end
 end
 
 module DArr = Remu_scope.Solve.DArr
-module type STNumber = sig
+module SYMNumber() = struct
+   let cnt = ref 0
+   type r = int Lazy.t
+   let get() =
+     lazy begin
+     let i = !cnt in
+     incr cnt;
+     i
+     end
+   let (!!) a = Lazy.force a |> ignore
+   let letl  _ a b = !!a; !!b; get()
+   let lam _ a = !!a; get()
+   let app a b = !!a; !!b; get()
+   let lit _ _ = get()
+   let var _ = get()
+end
+
+module type STAgg = sig
   type o
-  type c = int
-  type r = int * o
-
+  type c = ()
+  type r = o
   val store : r DArr.arr
+  val idx: r -> int
+end
+module FSYMAgg(ST: STAgg) = struct
+   include ST
+   let combine (o:o) () =
+     DArr.append store o;
+     o
+   let project (o: o) = o
+   let letl _  _ _ _ = ()
+   let lam _ _ _ = ()
+   let app _ _ _ = ()
+   let lit _ _ _ = ()
+   let var _ _ = ()
 end
 
-module SYMNumber(ST: STNumber):FSYM = struct
-   include ST
-   let combine o c =
-     let r = (c, o) in
-     DArr.append store r;
-     r
-   let project (c, o) = o
-   let letl _  _ _ _ = store.len
-   let lam _ _ _ = store.len
-   let app _ _ _ = store.len
-   let lit _ _ _ = store.len
-   let var _ _ = store.len
-end
