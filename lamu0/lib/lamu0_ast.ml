@@ -104,11 +104,16 @@ module type STType = sig
   val combine: o -> c -> r
   val project: r -> o
 
+  (* type checking states *)
   val tc: (module Typing.TState)
 
+  (* from repr to type *)
   val rtype: r -> Typing.t
 
+  (* from symbol to type *)
   val ntype: o -> Scoping.name -> Typing.t
+
+  (* annotate symbol's type *)
   val ann: o -> Scoping.name -> Typing.t -> unit
 
   (* basic types *)
