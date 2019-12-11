@@ -42,10 +42,8 @@ module MySTScope = struct
   let get ((_, c):r) = Lazy.force c
 end
 
-
 module MySYMScopeF = FSYMScope(MySTScope)
 module MySYMScope = (val grow num (module MySYMScopeF))
-
 
 module MySTType = struct
    type o = int * scopeinfo Lazy.t
@@ -93,17 +91,9 @@ module SYMAggF = FSYMAgg(MySTAgg)
 module SYMAgg =
   (val grow  (module MySYMType : SYM with type r = int * scopeinfo Lazy.t * Typing.t Lazy.t)
              (module SYMAggF))
-
-
-
-let (i, l1, l2) = run
-   (module SYMAgg)
-   Q.tagless
-
+let (i, l1, l2) = run (module SYMAgg) Q.tagless
 let _ = Lazy.force l1
 let return = MySTType.TC.prune @@ Lazy.force l2
-
-
 end
 
 let _ =
