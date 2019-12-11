@@ -106,11 +106,10 @@ module type STType = sig
 
   val tc: (module Typing.TState)
 
-  val oscope: o -> scopeinfo
   val rtype: r -> Typing.t
 
-  val ntype: Scoping.scoperef -> Scoping.name -> Typing.t
-  val ann: Scoping.scoperef -> Scoping.name -> Typing.t -> unit
+  val ntype: o -> Scoping.name -> Typing.t
+  val ann: o -> Scoping.name -> Typing.t -> unit
 
   (* basic types *)
   val intt: Typing.t
@@ -125,19 +124,18 @@ module FSYMType(ST: STType) = struct
   module TC = (val tc)
   open TC
 
-  let rscope : r -> scopeinfo = fun r -> oscope @@ project r
   let letl o n e1 e2 = lazy begin
-    let {i; _} = rscope e2 in
+    let eo2 = project e2 in
      let var_of_n = new_tvar() in
-     ann i n var_of_n;
+     ann eo2 n var_of_n;
      if unify var_of_n (rtype e1) then
        rtype e2
      else
        raise TypeError end
   let lam o n e = lazy begin
-    let {i; _} = rscope e in
+    let eo = project e in
     let var_of_arg = new_tvar() in
-    ann i n var_of_arg;
+    ann eo n var_of_arg;
     Typing.Arrow(var_of_arg, rtype e) end
 
   let app _ f a = lazy begin
@@ -153,8 +151,6 @@ module FSYMType(ST: STType) = struct
       | StringT -> strt
       | IntT -> intt
       | FloatT -> floatt end
-  let var o n = lazy begin
-    let {i; _} = oscope o in
-    ntype i n end
+  let var o n = lazy (ntype o n)
 end
 
