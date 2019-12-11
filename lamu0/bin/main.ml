@@ -1,6 +1,7 @@
 open Lamu0.Lamu0_parser
 open Lamu0.Lamu0_lex
 open Lamu0.Lamu0_ast
+open Lamu0.Final
 open Printf
 open Lexing
 
@@ -17,7 +18,7 @@ let run_parser lexbuf =
     fprintf stderr "%a: syntax error\n" print_position lexbuf;
     exit (-1)
 
-let _ =
-  let buf = Lexing.from_channel stdin in
-  let bs = List.fold_right List.cons (run_parser buf) [] in
-  List.iter (fun x -> show_ast @@ run (module SYMAst) x) bs
+(* let _ =
+ *   let buf = Lexing.from_channel stdin in
+ *   let bs = List.fold_right List.cons (run_parser buf) [] in
+ *   List.iter (fun x -> show_ast @@ run (module SYMAst) x) bs *)

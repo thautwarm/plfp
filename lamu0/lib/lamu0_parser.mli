@@ -22,4 +22,4 @@ exception Error
 
 (* The monolithic API. *)
 
-val prog: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Lamu0_ast.sym list)
+val prog: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Final.SYMSelf.r list)

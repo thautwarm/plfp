@@ -1,35 +1,5 @@
-type litype = IntT | FloatT | StringT
-[@@deriving show { with_path = false }]
-
-module type SYM = sig
-  type t
-  val letl : string -> t -> t -> t
-  val lam  : string -> t -> t
-  val app  : t -> t -> t
-  val lit  : litype -> string -> t
-  val var  : string -> t
-end
-
-type sym = {e: 'a . (module SYM with type t = 'a) -> 'a}
-
-module SYMSelf = struct
-  type t = sym
-  let letl : string -> t -> t -> t =
-    fun s {e=e1} {e=e2} ->
-    {e = fun (type a) ((module M: SYM with type t = a) as m) -> M.letl s (e1 m) (e2 m)}
-  let lam : string -> t -> t =
-    fun s {e} ->
-    {e = fun (type a) ((module M: SYM with type t = a) as m) -> M.lam s (e m)}
-  let app : t -> t -> t =
-    fun {e=f} {e=arg} ->
-    {e = fun (type a) ((module M: SYM with type t = a) as m) -> M.app (f m) (arg m)}
-  let lit : litype -> string -> t =
-    fun lt s ->
-    {e = fun (type a) (module M: SYM with type t = a) -> M.lit lt s}
-  let var : string -> t =
-    fun s ->
-    {e = fun (type a) (module M: SYM with type t = a) -> M.var s}
-end
+open Final
+module Map = BatMap
 
 type expr =
   | Let : (string * expr * expr) -> expr
@@ -37,24 +7,12 @@ type expr =
   | App : (expr * expr) -> expr
   | Lit : (litype * string) -> expr
   | Var : string -> expr
-[@@deriving show { with_path = false }]
+ [@@deriving show { with_path = false }]
 
 let show_ast : expr -> unit = fun e -> print_endline @@ show_expr e
 
-
-let run = fun (type a) ((module M: SYM with type t = a) as m) {e} -> e m
-
-module SYMAst = struct
-  type t = expr
-  let letl n e1 e2 = Let(n, e1, e2)
-  let lam s e = Lam(s, e)
-  let app f arg = App(f, arg)
-  let lit lt s = Lit(lt, s)
-  let var n = Var n
-end
-
 module SYMNumber() = struct
-   type t = int64
+   type r = int64
    let cnt = ref Int64.zero
    let get() =
        let i = !cnt in
@@ -67,60 +25,136 @@ module SYMNumber() = struct
    let var _ = get()
 end
 
-module SYMScope() = struct
-  open Remu_scope.Solve
+module FSYMAst = struct
+  type o
+  type c = expr
+  type r = {o: o; c: c}
+  let combine o c = {o; c}
+  let project {o; _} = o
 
-  type scopeinfo =
-  | Sym of sym
-  | Scope of scope
-  | ScopeUnrelated
-  type t = (env * scoperef) -> scopeinfo
-  let letl n e1 e2 (env, si) =
-    let _ = e1 (env, si) in
-    let si' = subscope env si in
-    let _ = enter env si' n in
-    (* for letrec, e1 = e1 (env, si') *)
-    let _ = e2 (env, si') in
-    Scope (env_get env si')
-  let lam n e (env, si)=
-    let si' = subscope env si in
-    let _ = enter env si' n in
-    let _ = e (env, si') in
-    Scope (env_get env si')
-  let app f a pair =
-    let _ = f pair in
-    let _ = a pair in
-    ScopeUnrelated
-  let lit _ _ _ = ScopeUnrelated
-  let var s (env, si) = Sym (require env si s)
+  let letl _ n {c=e1;_} {c=e2; _} = Let(n, e1, e2)
+  let lam _ s {c=e;_} = Lam(s, e)
+  let app _ {c=f;_} {c=arg; _} = App(f, arg)
+  let lit _ lt s = Lit(lt, s)
+  let var _ n = Var n
 end
 
-(* tagless zipper *)
-let zipT = fun
-  (type a b)
-  ((module M1: SYM with type t = a),  (module M2: SYM with type t = b)) ->
-  (module struct
-      type t = a * b
-      let letl n e1 e2 =
-         let (e1a, e1b) = e1 in
-         let (e2a, e2b) = e2 in
-         let letla = M1.(letl n e1a e2a) in
-         let letlb = M2.(letl n e1b e2b) in
-         (letla, letlb)
-      let lam n (ea, eb) =
-         let lama = M1.(lam n ea) in
-         let lamb = M2.(lam n eb) in
-         (lama, lamb)
-      let app (fa, fb) (aa, ab) =
-         let appa = M1.(app fa aa) in
-         let appb = M2.(app fb ab) in
-         (appa, appb)
-      let lit litype a =
-         let lita = M1.(lit litype a) in
-         let litb = M2.(lit litype a) in
-         (lita, litb)
-      let var n =
-         let vara = M1.(var n) in
-         let varb = M2.(var n) in
-         (vara, varb)
-   end: SYM with type t = a * b)
+module Scoping = Remu_scope.Solve
+
+type scopedesc =
+  | Sym of Scoping.sym
+  | ScopeUnrelated
+
+type scopeinfo = {desc: scopedesc; i: Scoping.scoperef}
+
+module type STScope = sig
+  type o
+  type c = scopeinfo Lazy.t
+  type r
+  val env : Scoping.env
+  val cur_scoperef : Scoping.scoperef ref
+  val combine: o -> c -> r
+  val project: r -> o
+end
+
+
+module FSYMScope(ST : STScope) = struct
+  include ST
+
+  let subscope () = Scoping.subscope ST.env (!ST.cur_scoperef)
+  let enter n =  Scoping.enter ST.env  (!ST.cur_scoperef) n
+  let require n =  Scoping.require ST.env (!ST.cur_scoperef) n
+  let scope () = Scoping.env_get ST.env (!ST.cur_scoperef)
+  let with_scope si' f =
+    let si = !ST.cur_scoperef in
+      ST.cur_scoperef := si';
+      let ret = f() in
+      ST.cur_scoperef := si;
+      {desc=ret; i=si}
+
+  let letl _ n e1 e2 = lazy begin
+    let _ = Lazy.force e1 in
+    let si' = subscope() in
+    with_scope si' @@ fun () ->
+    let _ = enter n in
+    (* for letrec, e1 = e1 (env, si') *)
+    let _ = Lazy.force e2 in
+    ScopeUnrelated end
+
+  let lam n e = lazy begin
+    let si' = subscope () in
+    with_scope si' @@ fun () ->
+    let _ = enter n in
+    let _ = Lazy.force e in
+    ScopeUnrelated end
+  let app f a = lazy begin
+    let _ = Lazy.force f in
+    let _ = Lazy.force a in
+    ScopeUnrelated end
+  let lit _ _ = lazy ScopeUnrelated
+  let var s = lazy begin
+    Sym (require s) end
+end
+
+module Typing = Remu_ts.Infer
+module type STType = sig
+  type o
+  type c = Typing.t Lazy.t
+  type r
+  val combine: o -> c -> r
+  val project: r -> o
+
+  val tc: (module Typing.TState)
+
+  val oscope: o -> scopeinfo
+  val rtype: r -> Typing.t
+
+  val ntype: Scoping.scoperef -> Scoping.name -> Typing.t
+  val ann: Scoping.scoperef -> Scoping.name -> Typing.t -> unit
+
+  (* basic types *)
+  val intt: Typing.t
+  val strt: Typing.t
+  val floatt: Typing.t
+end
+
+
+exception TypeError
+module FSYMType(ST: STType) = struct
+  include ST
+  module TC = (val tc)
+  open TC
+
+  let rscope : r -> scopeinfo = fun r -> oscope @@ project r
+  let letl o n e1 e2 = lazy begin
+    let {i; _} = rscope e2 in
+     let var_of_n = new_tvar() in
+     ann i n var_of_n;
+     if unify var_of_n (rtype e1) then
+       rtype e2
+     else
+       raise TypeError end
+  let lam o n e = lazy begin
+    let {i; _} = rscope e in
+    let var_of_arg = new_tvar() in
+    ann i n var_of_arg;
+    Typing.Arrow(var_of_arg, rtype e) end
+
+  let app _ f a = lazy begin
+    let var_of_ret = new_tvar() in
+    let var_of_arg = new_tvar() in
+    if unify (rtype f) (Typing.Arrow (var_of_arg, var_of_ret)) &&
+       unify (rtype a) var_of_ret then
+       var_of_ret
+    else
+      raise TypeError end
+  let lit _ lt v = lazy begin
+      match lt with
+      | StringT -> strt
+      | IntT -> intt
+      | FloatT -> floatt end
+  let var o n = lazy begin
+    let {i; _} = oscope o in
+    ntype i n end
+end
+

@@ -1,6 +1,6 @@
 %{
-open Lamu0_ast
-open Lamu0_ast.SYMSelf
+open Final
+open Final.SYMSelf
 %}
 
 %token LET
@@ -18,7 +18,7 @@ open Lamu0_ast.SYMSelf
 %token SEMICON
 %token EOF
 
-%start <Lamu0_ast.sym list> prog
+%start <Final.SYMSelf.r list> prog
 
 %%
 

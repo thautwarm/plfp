@@ -59,8 +59,8 @@ and _menhir_state =
 
 # 1 "lib/lamu0_parser.mly"
   
-open Lamu0_ast
-open Lamu0_ast.SYMSelf
+open Final
+open Final.SYMSelf
 
 # 66 "lib/lamu0_parser.ml"
 
@@ -426,7 +426,7 @@ and _menhir_goto_loption_separated_nonempty_list_SEMICON_expr__ : _menhir_env ->
         let _2 = () in
         let _v : (
 # 21 "lib/lamu0_parser.mly"
-       (Lamu0_ast.sym list)
+       (Final.SYMSelf.r list)
 # 431 "lib/lamu0_parser.ml"
         ) = let stmts = 
 # 232 "<standard.mly>"
@@ -443,7 +443,7 @@ and _menhir_goto_loption_separated_nonempty_list_SEMICON_expr__ : _menhir_env ->
         let (_menhir_s : _menhir_state) = _menhir_s in
         let (_v : (
 # 21 "lib/lamu0_parser.mly"
-       (Lamu0_ast.sym list)
+       (Final.SYMSelf.r list)
 # 448 "lib/lamu0_parser.ml"
         )) = _v in
         ((let (_menhir_env : _menhir_env) = _menhir_env in
@@ -451,7 +451,7 @@ and _menhir_goto_loption_separated_nonempty_list_SEMICON_expr__ : _menhir_env ->
         let (_menhir_s : _menhir_state) = _menhir_s in
         let (_v : (
 # 21 "lib/lamu0_parser.mly"
-       (Lamu0_ast.sym list)
+       (Final.SYMSelf.r list)
 # 456 "lib/lamu0_parser.ml"
         )) = _v in
         ((let (_menhir_env : _menhir_env) = _menhir_env in
@@ -459,11 +459,11 @@ and _menhir_goto_loption_separated_nonempty_list_SEMICON_expr__ : _menhir_env ->
         let (_menhir_s : _menhir_state) = _menhir_s in
         let ((_1 : (
 # 21 "lib/lamu0_parser.mly"
-       (Lamu0_ast.sym list)
+       (Final.SYMSelf.r list)
 # 464 "lib/lamu0_parser.ml"
         )) : (
 # 21 "lib/lamu0_parser.mly"
-       (Lamu0_ast.sym list)
+       (Final.SYMSelf.r list)
 # 468 "lib/lamu0_parser.ml"
         )) = _v in
         (Obj.magic _1 : 'freshtv30)) : 'freshtv32)) : 'freshtv34)) : 'freshtv36)) : 'freshtv38)
@@ -748,7 +748,7 @@ and _menhir_discard : _menhir_env -> _menhir_env =
 
 and prog : (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (
 # 21 "lib/lamu0_parser.mly"
-       (Lamu0_ast.sym list)
+       (Final.SYMSelf.r list)
 # 753 "lib/lamu0_parser.ml"
 ) =
   fun lexer lexbuf ->
