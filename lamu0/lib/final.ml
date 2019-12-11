@@ -1,16 +1,6 @@
 type litype = IntT | FloatT | StringT
 [@@deriving show { with_path = false }]
 
-module type PSYM = sig
-   type spot
-   type extra
-   val letl : extra -> string -> (extra * spot) -> (extra * spot) -> spot
-   val lam : extra -> string -> (extra * spot) -> spot
-   val app : extra -> (extra * spot) -> (extra * spot) -> spot
-   val lit : extra -> litype -> string -> spot
-   val var : extra -> string -> spot
-end
-
 (* to handle tagless final interpretations with DAG dependencies *)
 module type FSYM = sig
   type r

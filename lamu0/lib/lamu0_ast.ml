@@ -1,43 +1,6 @@
 open Final
 module Map = BatMap
-
-type expr =
-  | Let : (string * expr * expr) -> expr
-  | Lam : (string * expr) -> expr
-  | App : (expr * expr) -> expr
-  | Lit : (litype * string) -> expr
-  | Var : string -> expr
- [@@deriving show { with_path = false }]
-
-let show_ast : expr -> unit = fun e -> print_endline @@ show_expr e
-
-module SYMNumber() = struct
-   type r = int64
-   let cnt = ref Int64.zero
-   let get() =
-       let i = !cnt in
-       cnt := Int64.add Int64.one i;
-       i
-   let letl _ _ _ = get()
-   let lam _ _ = get()
-   let app _ _ = get()
-   let lit _ _ = get()
-   let var _ = get()
-end
-
-module FSYMAst = struct
-  type o
-  type c = expr
-  type r = {o: o; c: c}
-  let combine o c = {o; c}
-  let project {o; _} = o
-
-  let letl _ n {c=e1;_} {c=e2; _} = Let(n, e1, e2)
-  let lam _ s {c=e;_} = Lam(s, e)
-  let app _ {c=f;_} {c=arg; _} = App(f, arg)
-  let lit _ lt s = Lit(lt, s)
-  let var _ n = Var n
-end
+type ('k, 'v) map = ('k, 'v) Map.t
 
 module Scoping = Remu_scope.Solve
 
@@ -55,10 +18,10 @@ module type STScope = sig
   val cur_scoperef : Scoping.scoperef ref
   val combine: o -> c -> r
   val project: r -> o
+  val get: r -> c
 end
 
-
-module FSYMScope(ST : STScope) = struct
+module FSYMScope(ST : STScope):FSYM = struct
   include ST
 
   let subscope () = Scoping.subscope ST.env (!ST.cur_scoperef)
@@ -72,28 +35,30 @@ module FSYMScope(ST : STScope) = struct
       ST.cur_scoperef := si;
       {desc=ret; i=si}
 
-  let letl _ n e1 e2 = lazy begin
-    let _ = Lazy.force e1 in
+  let return desc = {desc=desc; i = !ST.cur_scoperef}
+  let letl : o -> string -> r -> r -> c = fun _ n e1 e2 -> lazy begin
+    let _ = get e1 in
     let si' = subscope() in
     with_scope si' @@ fun () ->
     let _ = enter n in
     (* for letrec, e1 = e1 (env, si') *)
-    let _ = Lazy.force e2 in
+    let _ = get e2 in
     ScopeUnrelated end
 
-  let lam n e = lazy begin
+  let lam: o -> string -> r -> c = fun _ n e -> lazy begin
     let si' = subscope () in
     with_scope si' @@ fun () ->
     let _ = enter n in
-    let _ = Lazy.force e in
+    let _ = get e in
     ScopeUnrelated end
-  let app f a = lazy begin
-    let _ = Lazy.force f in
-    let _ = Lazy.force a in
-    ScopeUnrelated end
-  let lit _ _ = lazy ScopeUnrelated
-  let var s = lazy begin
-    Sym (require s) end
+  let app: o -> r -> r -> c = fun _ f a -> lazy begin
+    let _ = get f in
+    let _ = get a in
+    return ScopeUnrelated
+    end
+  let lit: o -> litype -> string -> c = fun _ _ _ -> lazy (return ScopeUnrelated)
+  let var: o -> string -> c = fun _ s -> lazy begin
+    return @@ Sym (require s) end
 end
 
 module Typing = Remu_ts.Infer
@@ -124,7 +89,7 @@ end
 
 
 exception TypeError
-module FSYMType(ST: STType) = struct
+module FSYMType(ST: STType):FSYM = struct
   include ST
   module TC = (val tc)
   open TC
@@ -159,3 +124,25 @@ module FSYMType(ST: STType) = struct
   let var o n = lazy (ntype o n)
 end
 
+module DArr = Remu_scope.Solve.DArr
+module type STNumber = sig
+  type o
+  type c = int
+  type r = int * o
+
+  val store : r DArr.arr
+end
+
+module SYMNumber(ST: STNumber):FSYM = struct
+   include ST
+   let combine o c =
+     let r = (c, o) in
+     DArr.append store r;
+     r
+   let project (c, o) = o
+   let letl _  _ _ _ = store.len
+   let lam _ _ _ = store.len
+   let app _ _ _ = store.len
+   let lit _ _ _ = store.len
+   let var _ _ = store.len
+end
