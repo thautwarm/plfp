@@ -27,9 +27,9 @@ The proposal for the syntax is decribed in following BNF,
 ```bnf
 expr ::= let | lam | app
 let  ::= 'let' ID '=' expr 'in' expr
-lam  ::= 'fn' ID '->' expr
+lam  ::= 'fn' ID '=>' expr
 app  ::= atomexpr
-     |   app expr
+     |   app atomexpr
 atomexpr ::= INT | STR | FLOAT | '(' expr ')'
 ```
 
