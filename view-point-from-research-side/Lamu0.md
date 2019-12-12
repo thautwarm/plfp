@@ -1,6 +1,6 @@
 NOTE: If you'd install `remu_ts` and `remu_scope`, clone them from [RemuLang](https://github.com/RemuLang/) and use `opam install .` to install them locally.
 
-# Lamu0: A Case of Composition and Decoupling for Multiple Interpretations
+## FSYM: An Abstraction On Tagless-Final Style To Compositing And Decoupling Multiple Interpretations
 
 `Lamu0` is a very simple and basic programming language, but the implementation in
 
