@@ -180,6 +180,7 @@ module type FSYM = sig
     type c (*delta*)
     type o
     val combine : o -> c -> r
+    val project: r -> o
     
     val letl : o -> string -> r -> r -> c
     val lam  : o -> string -> r -> c
@@ -189,7 +190,7 @@ module type FSYM = sig
 end
 ```
 
-For `val lam_2: o -> string -> r -> c`, it uses the interpretation result of last phrase(typed `o`), and the argname(`string`), as well as the interpreted body(`r=o+c`), and return a `c`.
+For `val lam_2: o -> string -> r -> c`, it uses the interpretation result of the last phrase(typed `o`), and the argname(`string`), as well as the interpreted body(`r=o+c`), and return a `c`.
 
 Now just give the implementation of `lam_3` in the following code block. Actually I don't know yet
 how to explain how I came up with it, but it's tidy, isn't it?
@@ -217,16 +218,16 @@ Let's review our goals aforementioned.
     Notice that, in `FSYM/A->A+B`, we don't need to care how interpretation for `A` is proceeding.
 
     **We just focus on how to use the result from A to implement B**, and no need to care about how
-    `A` and `B` gets composed.
+    `A` and `B` get composed.
 
     Check the type signature of `lam_2`: `val lam_2: o -> string -> r -> c`:
     - `o` here is from `A`, already computed.
     - `r` here is the inner result, we can deconstruct it to `o` and `c`, if needed.
     - `c` here is the **only result** we have to compute in the process of `A->A+B`.
 
-    Interpretations for `o` and `c/r` is separated.
+    Hence interpretations for `o` and `c/r` are separated.
 
-    Interpretion for `r` derives from interpretion for `c`, via the constribution of `val combine: o -> c -> r`).
+    Interpretion for `r` derives from interpretion for `c`, and `val combine: o -> c -> r` is responsible for this).
 
 2. **resolving the dependency relationships among dependent interpretations**
 
