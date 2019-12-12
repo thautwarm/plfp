@@ -129,7 +129,7 @@ module type FSYM = sig
 end
 ```
 
-In `SYM`, an operator of type `a -> b -> ... -> r`,
+In `FSYM`, an operator of type `a -> b -> ... -> r`,
 will be the type `o -> a -> b -> ... -> c`, where `o` is the original `repr` of an algebra,
 `r` is the `repr` of the result algebra transformed by `fun m -> grow(m, (module FSYM))`,
 `c` is the delta of the change from `o` to `r`.
