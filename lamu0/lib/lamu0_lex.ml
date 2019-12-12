@@ -19,7 +19,7 @@ let __ocaml_lex_tables = {
     \253\255\254\255\255\255";
   Lexing.lex_backtrk =
    "\255\255\255\255\255\255\012\000\011\000\255\255\255\255\255\255\
-    \007\000\005\000\012\000\012\000\012\000\000\000\255\255\001\000\
+    \007\000\005\000\012\000\012\000\012\000\001\000\255\255\000\000\
     \012\000\002\000\003\000\004\000\255\255\255\255\255\255\255\255\
     \255\255\255\255\255\255";
   Lexing.lex_default =
@@ -287,12 +287,12 @@ and __ocaml_lex_read_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
 # 20 "lib/lamu0_lex.mll"
-            ( INT (Lexing.lexeme lexbuf) )
+               ( FLOAT (Lexing.lexeme lexbuf) )
 # 292 "lib/lamu0_lex.ml"
 
   | 1 ->
 # 21 "lib/lamu0_lex.mll"
-               ( FLOAT (Lexing.lexeme lexbuf) )
+            ( INT (Lexing.lexeme lexbuf) )
 # 297 "lib/lamu0_lex.ml"
 
   | 2 ->
@@ -387,21 +387,24 @@ let
               (
       match pstr_status with
       | NonStr -> quotestr StrNonEsc lexbuf
-      | StrNonEsc -> STRING (String.concat "" @@ List.rev !pointer)
+      | StrNonEsc ->
+        let s = (String.concat "" @@ List.rev !pointer) in
+        Printf.printf "%s\n" s;
+        STRING s
       | StrEsc -> begin
         push_ptr @@ c2s a;
         quotestr StrNonEsc lexbuf
       end
   )
-# 397 "lib/lamu0_lex.ml"
+# 400 "lib/lamu0_lex.ml"
 
   | 1 ->
 let
-# 48 "lib/lamu0_lex.mll"
+# 51 "lib/lamu0_lex.mll"
             a
-# 403 "lib/lamu0_lex.ml"
+# 406 "lib/lamu0_lex.ml"
 = Lexing.sub_lexeme_char lexbuf lexbuf.Lexing.lex_start_pos in
-# 48 "lib/lamu0_lex.mll"
+# 51 "lib/lamu0_lex.mll"
              (
     match pstr_status with
     | StrNonEsc -> quotestr StrEsc lexbuf
@@ -411,25 +414,25 @@ let
       end
     | _ -> failwith "expected impossible"
   )
-# 415 "lib/lamu0_lex.ml"
+# 418 "lib/lamu0_lex.ml"
 
   | 2 ->
 let
-# 57 "lib/lamu0_lex.mll"
+# 60 "lib/lamu0_lex.mll"
          a
-# 421 "lib/lamu0_lex.ml"
+# 424 "lib/lamu0_lex.ml"
 = Lexing.sub_lexeme_char lexbuf lexbuf.Lexing.lex_start_pos in
-# 57 "lib/lamu0_lex.mll"
+# 60 "lib/lamu0_lex.mll"
            (
     push_ptr @@ c2s a;
-    read lexbuf
+    quotestr pstr_status lexbuf
   )
-# 428 "lib/lamu0_lex.ml"
+# 431 "lib/lamu0_lex.ml"
 
   | 3 ->
-# 61 "lib/lamu0_lex.mll"
+# 64 "lib/lamu0_lex.mll"
         (EOF)
-# 433 "lib/lamu0_lex.ml"
+# 436 "lib/lamu0_lex.ml"
 
   | __ocaml_lex_state -> lexbuf.Lexing.refill_buff lexbuf;
       __ocaml_lex_quotestr_rec pstr_status lexbuf __ocaml_lex_state

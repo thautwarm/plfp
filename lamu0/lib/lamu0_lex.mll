@@ -17,8 +17,8 @@ let white = [' ' '\t' '\n' '\r']+
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 rule read = parse
-  | decimal { INT (Lexing.lexeme lexbuf) }
   | floatpoint { FLOAT (Lexing.lexeme lexbuf) }
+  | decimal { INT (Lexing.lexeme lexbuf) }
   | "let" { LET }
   | "in" { IN }
   | "fn" { FN }
@@ -39,7 +39,10 @@ and quotestr pstr_status = parse
   | "\"" as a {
       match pstr_status with
       | NonStr -> quotestr StrNonEsc lexbuf
-      | StrNonEsc -> STRING (String.concat "" @@ List.rev !pointer)
+      | StrNonEsc ->
+        let s = (String.concat "" @@ List.rev !pointer) in
+        Printf.printf "%s\n" s;
+        STRING s
       | StrEsc -> begin
         push_ptr @@ c2s a;
         quotestr StrNonEsc lexbuf
@@ -56,6 +59,6 @@ and quotestr pstr_status = parse
   }
   | _ as a {
     push_ptr @@ c2s a;
-    read lexbuf
+    quotestr pstr_status lexbuf
   }
   | eof {EOF}
