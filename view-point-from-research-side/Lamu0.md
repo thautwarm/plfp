@@ -42,7 +42,7 @@ A -> B -> ... -> C
           \   \|/
             CodeGen
 
-for all phrase, it's prior to phrase CodeGen or it's phrase CodeGen
+for each phrase, it's either prior to phrase CodeGen or phrase CodeGen itself.
 ```
 
 Another intuituve example, to perform type checking/inference, we shall understand the scope information firstly.
