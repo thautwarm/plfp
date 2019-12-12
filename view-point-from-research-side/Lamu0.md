@@ -99,14 +99,110 @@ A : module SYM with type repr = o (* base *)
 B : module SYM with type repr = r (* result *)
 ```
 
-We check the "delta" from `A/base` to `B/result`,
-and represent it in `type c`, we have `grow` change the type `repr` of the algebra(`SYM`) from `o` to `r`, with a delta `c`.
+We check the "delta" from `o = A.repr` to `r = B.repr`,
+and represent it with `type c`:
+`grow` change the type `repr` of the algebra(`SYM`) from `o` to `r`, with a delta `c`.
 
 We extract the type expanding function out:
 ```ocaml
 let combine : o -> c -> r
 ```
 
-In this tagless final approach, we could
+For the sake of using tagless final approach, we make `A->A+B` similar to a `SYM`,
+and I call it `FSYM`, representing it's a functor from `SYM` to `SYM`,
+however maybe due to my lack of improvements for the implementation, I didn't actually use module functor.
+
+```ocaml
+module type FSYM = sig
+    type r
+    type c (*delta*)
+    type o
+    val combine : o -> c -> r
+    
+    val letl : o -> string -> r -> r -> c
+    val lam  : o -> string -> r -> c
+    val app  : o -> r -> r -> c
+    val lit  : o -> litype -> string -> c
+    val var  : o -> string  -> c
+end
+```
+
+In `SYM`, an operator of type `a -> b -> ... -> r`,
+will be the type `o -> a -> b -> ... -> c`, where `o` is the original `repr` of an algebra,
+`r` is the `repr` of the result algebra transformed by `fun m -> grow(m, (module FSYM))`,
+`c` is the delta of the change from `o` to `r`.
+
+So then type of `grow` is 
+
+```ocaml
+'o 'c 'r.
+(module SYM with type r = 'o) ->
+(module FSYM with type o ='o and type c = 'c and type r = 'r) ->
+(module SYM with type r = 'r)
+```
+
+Besides, For `grow(A, A->A+B) = A+B`, `A+B` needs to implement the tagless final interpretation for both `repr=o` and `repr=r=o+c`, let's just check the `lam` operator, and remember we already have `val combine : o -> c -> r`:
+
+- `A`:
+   ```ocaml
+   val lam_1: string -> o -> o
+   ```
+
+- `A->A+B`:
+    ```ocaml
+    val lam_2: o -> string -> r -> c
+    ```
+
+- `A+B`
+    ```ocaml
+    val lam_3: string -> r -> r
+    ```
+
+We now need to implement `lam_3` via `lam_1` and `lam_2`.
+
+To use `lam_1` in `lam_3`, I think it's natural:
+`o` is "included" in `r`, so we should be able to project `r` to `o`:
+
+```ocaml
+let lam_3 (argname: string) (body: r) =
+    let body_o: o = project body in
+    let o = lam_1 argname body_o in
+    ...
+```
+
+So we introduce `val project: r -> o` into `FSYM`.
+
+```ocaml
+module type FSYM = sig
+    type r
+    type c (*delta*)
+    type o
+    val combine : o -> c -> r
+    
+    val letl : o -> string -> r -> r -> c
+    val lam  : o -> string -> r -> c
+    val app  : o -> r -> r -> c
+    val lit  : o -> litype -> string -> c
+    val var  : o -> string  -> c
+end
+```
+
+For `val lam_2: o -> string -> r -> c`, it uses the interpretation result of last phrase(typed `o`), and the argname(`string`), as well as the interpreted body(`r=o+c`), and return a `c`.
+
+Now just give the implementation of `lam_3` in the following code block. Actually I don't know yet
+how to explain how I came up with it, but it's tidy, isn't it?
+
+```ocaml
+let lam_3 (argname: string) (body: r) =
+    let body_o: o = project body in
+    let o = lam_1 argname body_o in
+    let c = lam_2 o argname body in
+    combine o c
+```
 
 
+The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/final.ml#L28).
+
+
+Application
+------------------------
