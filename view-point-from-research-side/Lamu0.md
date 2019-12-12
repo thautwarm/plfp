@@ -47,7 +47,8 @@ for each phrase, it's either prior to phrase CodeGen or phrase CodeGen itself.
 
 Another intuituve example, to perform type checking/inference, we shall understand the scope information firstly.
 
-``` ---------------------
+``` 
+    ---------------------
     |                   |
 let x = 1               |  identify the occurrences of
    let y = 2            |  a type variable
