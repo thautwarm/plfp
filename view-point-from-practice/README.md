@@ -1,6 +1,3 @@
-
-Hello, here're my presentations, for introducing interestings stuffs of Programming Languages.
-
 ## Local Dependencies
 
 - remu_ts: https://github.com/RemuLang/remu-type-system
