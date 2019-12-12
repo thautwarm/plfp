@@ -1,4 +1,4 @@
 (executable
  (public_name lamu0)
  (name main)
- (libraries lamu0))
+ (libraries lamu0 remu_ts))

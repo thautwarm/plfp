@@ -82,9 +82,8 @@ or
 ./_build/install/default/bin/lamu0du
 let f = fn x => fn y => y 1.2 x in f 2;;
 
-=> (Arrow ((Arrow ((Nom 1), (Arrow ((Nom 0), (Var 3))))), (Var 3)))
+=> (^float -> ^int -> '3) -> '3
 ```
 (To be continue
-
 
 ## Limitations of Lamu0

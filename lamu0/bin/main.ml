@@ -4,6 +4,7 @@ open Lamu0.Lamu0_ast
 open Lamu0.Final
 open Printf
 open Lexing
+module Builder = Remu_ts.Builder
 
 let print_position outx lexbuf =
   let pos = lexbuf.lex_curr_p in
@@ -101,4 +102,4 @@ let _ =
   let bs = List.fold_right List.cons (run_parser buf) [] in
   let res = List.hd bs in
   let module M = App(struct let tagless = res end) in
-  Printf.printf "%s" @@ Typing.show M.return
+  Printf.printf "%s" @@ Builder.dumpstr (Builder.mk_show_named_nom (module M.MySTType.TC)) M.return
