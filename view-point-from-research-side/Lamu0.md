@@ -413,3 +413,57 @@ x: ^int
 y: ^int
 func: ^int -> ^int -> ^bool
 ```
+
+The implementation of `FSYM` to leverage above existing framework is:
+
+```ocaml
+module Typing = Remu_ts.Infer
+module type STType = sig
+  type o
+  type c = Typing.t Lazy.t
+  type r
+  val combine: o -> c -> r
+  val project: r -> o
+  (* type checking states *)
+  val tc: (module Typing.TState)
+  (* from repr to type *)
+  val rtype: r -> Typing.t
+  (* from symbol to type *)
+  val ntype: o -> Scoping.name -> Typing.t
+  (* annotate symbol's type *)
+  val ann: o -> Scoping.name -> Typing.t -> unit
+  (* basic types *)
+  val intt: Typing.t
+  val strt: Typing.t
+  val floatt: Typing.t
+end
+
+
+exception TypeError
+module FSYMType(ST: STType) = struct
+  include ST
+  module TC = (val tc)
+  open TC
+
+  let letl : o -> string -> r -> r -> c = ...
+  let lam: o -> string -> r -> c = ...
+  let app: o -> r -> r -> c = ...
+  let lit: o -> litype -> string -> c = ...
+  let var: o -> string -> c  = ...
+end
+```
+
+The whole code of this could be found at [Lamu0_ast.ml #L62-L129](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/lamu0_ast.ml#L62).
+
+For a rough sketch, let's check the implementation `lam` again:
+
+```ocaml
+let lam o n e = lazy begin
+    let eo = project e in
+    let var_of_arg = new_tvar() in
+    ann eo n var_of_arg;
+    Typing.Arrow(var_of_arg, rtype e) end
+```
+
+
+Finally, we assembly things together, and make a type inferencer for `Lamu0` at [main.ml](https://github.com/thautwarm/plfp/blob/master/lamu0/bin/main.ml).
