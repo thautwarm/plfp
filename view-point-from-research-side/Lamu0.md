@@ -204,5 +204,56 @@ let lam_3 (argname: string) (body: r) =
 The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/final.ml#L28).
 
 
+Analysis
+---------------
+
+Let's review our goals aforementioned.
+
+1. **decoupling the related interpretations as much as possible**
+
+    Each interpretation is a `SYM`, and `FSYM` is for compositing `SYM`s.
+
+    Notice that, in `FSYM/A->A+B`, we don't need to care how interpretation for `A` is proceeding.
+
+    **We just focus on how to use the result from A to implement B**, and no need to care about how
+    `A` and `B` gets composed.
+
+    Check the type signature of `lam_2`: `val lam_2: o -> string -> r -> c`:
+    - `o` here is from `A`, already computed.
+    - `r` here is the inner result, we can deconstruct it to `o` and `c`, if needed.
+    - `c` here is the **only result** we have to compute in the process of `A->A+B`.
+
+    Interpretations for `o` and `c/r` is separated.
+
+    Interpretion for `r` derives from interpretion for `c`, via the constribution of `val combine: o -> c -> r`).
+
+2. **resolving the dependency relationships among related interpretations**
+
+    This is pretty easy to explain, check the type signature of `lam_2`:
+
+    `val lam_2: o -> string -> r -> c`,
+    
+    the current expression's interpretation result is given in `o`,
+    the inner expression's interpretation result is given in `r`.
+
+    **You know everything from the last phrase.**
+
+3. **compositing separate interpretations**
+   
+    I guess no need to explain this. If you have any problem,
+    check the type signature of `grow`:
+
+    ```ocaml
+    'o 'c 'r.
+    (* SYM : A; repr : o *)
+    (module SYM with type r = 'o) ->
+    (* FSYM : A->A+B *)
+    (module FSYM with type o ='o and type c = 'c and type r = 'r) ->
+    (* SYM: A+B; repr=r=o+c *)
+    (module SYM with type r = 'r)
+    ```
+
+That's all of my analysis, does it make sense :) ?
+
 Application
 ------------------------
