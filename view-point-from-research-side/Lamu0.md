@@ -69,8 +69,8 @@ The tagless final approach works for the polymorphisms of
 interpreting a given "grammar", however,
 it lacks of the facilities to work with multuple separate interpretations, like
 - **compositing separate interpretations**
-- **resolving the dependency relationships among related interpretations**
-- **decoupling the related interpretations as much as possible**
+- **resolving the dependency relationships among dependent interpretations**
+- **decoupling the dependent interpretations as much as possible**
 
 To address this problem, I proposed an operation among the algebras to make reductions, which could be taken advantage of to solve above 3 pain spots fairly easy.
 
@@ -210,7 +210,7 @@ Analysis
 
 Let's review our goals aforementioned.
 
-1. **decoupling the related interpretations as much as possible**
+1. **decoupling the dependent interpretations as much as possible**
 
     Each interpretation is a `SYM`, and `FSYM` is for compositing `SYM`s.
 
@@ -228,7 +228,7 @@ Let's review our goals aforementioned.
 
     Interpretion for `r` derives from interpretion for `c`, via the constribution of `val combine: o -> c -> r`).
 
-2. **resolving the dependency relationships among related interpretations**
+2. **resolving the dependency relationships among dependent interpretations**
 
     This is pretty easy to explain, check the type signature of `lam_2`:
 
