@@ -1,3 +1,5 @@
+NOTE: If you'd install `remu_ts` and `remu_scope`, clone them from [RemuLang](https://github.com/RemuLang/) and use `opam install .` to install them locally.
+
 # Lamu0: A Case of Composition and Decoupling for Multiple Interpretations
 
 `Lamu0` is a very simple and basic programming language, but the implementation in
@@ -27,8 +29,7 @@ end
 
 
 
-Background
----------------------------
+## Background
 
 The steps through `type r` to the executable low level instructions are complex:
 Usually, a phrase `A` should be performed prior to some phrase `B`, so `B` depends on `A`.
@@ -74,8 +75,8 @@ it lacks of the facilities to work with multuple separate interpretations, like
 
 To address this problem, I proposed an operation among the algebras to make reductions, which could be taken advantage of to solve above 3 pain spots fairly easy.
 
-Introduction
---------------------
+## Introduction
+
 
 
 The core idea is the generalization of `fold` operation,
@@ -205,8 +206,7 @@ let lam_3 (argname: string) (body: r) =
 The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/final.ml#L28).
 
 
-Analysis
----------------
+## Analysis
 
 Let's review our goals aforementioned.
 
@@ -254,7 +254,162 @@ Let's review our goals aforementioned.
     (module SYM with type r = 'r)
     ```
 
-That's all of my analysis, does it make sense :) ?
 
-Application
-------------------------
+\* In fact, if we use lazy types as the `repr` of each interpretation/phrase,
+the order of interpretation can be more flexible.
+
+Check `Lamu0` in the sub-section `Application`.
+
+
+## Application
+
+
+[Lamu0](https://github.com/thautwarm/plfp/tree/master/lamu0) gives a very simple example to compose the existing and decoupled frameworks for compilers.
+
+
+### Scoping: Name Resolution
+
+
+An existing simple framework, [remu_scope](https://github.com/RemuLang/remu-scope), designed for name resolution, also written by me, provides following 3 major APIs:
+
+```ocaml
+val require: env -> scoperef -> name -> sym
+val enter: env -> scoperef -> name -> sym
+val subscope: env -> scoperef -> scoperef
+```
+
+For example, to solve the scope of following code:
+```ocaml
+let x = 1 in x
+```
+
+We can do:
+```ocaml
+let env = empty_env() in
+let root: scoperef = 0 in
+let let_scope = subscope env root in
+let x_assign = enter let_scope "x" in
+let x_load = require let_scope "x" 
+```
+
+With this snippet, you cab check `assert (x_assign = x_load)`.
+
+With tagless final extended by `FSYM` abstraction and above framework,
+we can implement a standalone but composable interpretation for name resolution:
+
+```ocaml
+module Scoping = Remu_scope.Solve
+
+type scopedesc =
+  | Sym of Scoping.sym
+  | ScopeUnrelated (* for expressions that're not variables *)
+
+type scopeinfo = {desc: scopedesc; i: Scoping.scoperef}
+
+module type STScope = sig
+  type o
+  type c = scopeinfo Lazy.t
+  type r
+  val env : Scoping.env
+  val cur_scoperef : Scoping.scoperef ref
+  val combine: o -> c -> r
+  val project: r -> o
+  val get: r -> scopeinfo
+end
+
+module FSYMScope(ST : STScope) = struct
+    include ST
+    let letl : o -> string -> r -> r -> c = ...
+    let lam: o -> string -> r -> c = ...
+    let app: o -> r -> r -> c = ...
+    let lit: o -> litype -> string -> c = ...
+    let var: o -> string -> c  = ...
+end
+```
+
+The whole code can be found at [lamu0_ast.ml L5-L60](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/lamu0_ast.ml#L5-L60).
+
+We unroll the implementation of `lam`:
+
+
+```ocaml
+(*
+let subscope () = Scoping.subscope ST.env (!ST.cur_scoperef)
+let enter n = Scoping.enter ST.env (!ST.cur_scoperef) n
+let with_scope si' f =
+    let si = !ST.cur_scoperef in
+      ST.cur_scoperef := si';
+      let ret = f() in
+      ST.cur_scoperef := si;
+      {desc=ret; i=si}
+*)
+let lam: o -> string -> r -> c = fun _ n e -> lazy begin
+    let si' = subscope () in
+    with_scope si' @@ fun () ->
+    let _ = enter n in
+    let _ = get e in
+    ScopeUnrelated end
+```
+
+It's pretty easy, and can be composed into the compilation pipeline, for every programming language whose scope could be expressed by `remu_scope`.
+
+
+### Typing: Type Inference
+
+Type inference requires already knowing the scope information.
+
+So it depends on the previous phrase, name resolution.
+
+Firstly we check an existing framework providing type inference, [remu_ts](https://github.com/RemuLang/remu-type-system).
+
+And we just use a very limited part of `remu_ts`, here's an example of this framework:
+
+To infer the types of code,
+
+```ocaml
+val f : forall a. 'a -> 'a -> bool
+let x = 1 in f x y
+```
+
+We write
+
+```ocaml
+open Remu_ts.Infer
+open Remu_ts.Comm
+open Remu_ts.Builder
+
+module TC : TState = (val crate_tc empty_tctx : TState)
+let _ = let open TC in
+   let intt = new_type "int" in
+   let boolt = new_type "bool" in
+   let x = new_tvar() in
+   let y = new_tvar() in
+   let f = Forall(["a"], Arrow(Fresh "a", Arrow(Fresh "a", boolt))) in
+   
+   (* x = 1 *)
+   assert (unify x intt);
+   
+   (* f x y *)
+   let arg1 = new_tvar() in
+   let arg2 = new_tvar() in
+   assert (unify arg1 x);
+   assert (unify arg2 y);
+   let func = Arrow(arg1, Arrow(arg2, boolt)) in
+   assert (unify f func);
+   let print_ty name x =
+        Printf.printf "%s: %s\n" name   @@
+        dumpstr
+        (mk_show_named_nom (module TC)) @@
+        prune x
+    in
+   print_ty "x" x;
+   print_ty "y" y;
+   print_ty "func" func
+```
+
+After running this file, we got
+```
+x: ^int
+y: ^int
+func: ^int -> ^int -> ^bool
+```
