@@ -97,9 +97,10 @@ let _ = Lazy.force l1
 let return = MySTType.TC.prune @@ Lazy.force l2
 end
 
+let flip f a b = f b a
 let _ =
   let buf = Lexing.from_channel stdin in
   let bs = List.fold_right List.cons (run_parser buf) [] in
-  let res = List.hd bs in
+  (flip List.iter) bs @@ fun res ->
   let module M = App(struct let tagless = res end) in
-  Printf.printf "%s" @@ Builder.dumpstr (Builder.mk_show_named_nom (module M.MySTType.TC)) M.return
+  Printf.printf "%s\n" @@ Builder.dumpstr (Builder.mk_show_named_nom (module M.MySTType.TC)) M.return
