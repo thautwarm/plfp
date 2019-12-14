@@ -389,22 +389,21 @@ let
       | NonStr -> quotestr StrNonEsc lexbuf
       | StrNonEsc ->
         let s = (String.concat "" @@ List.rev !pointer) in
-        Printf.printf "%s\n" s;
         STRING s
       | StrEsc -> begin
         push_ptr @@ c2s a;
         quotestr StrNonEsc lexbuf
       end
   )
-# 400 "lib/lamu0_lex.ml"
+# 399 "lib/lamu0_lex.ml"
 
   | 1 ->
 let
-# 51 "lib/lamu0_lex.mll"
+# 50 "lib/lamu0_lex.mll"
             a
-# 406 "lib/lamu0_lex.ml"
+# 405 "lib/lamu0_lex.ml"
 = Lexing.sub_lexeme_char lexbuf lexbuf.Lexing.lex_start_pos in
-# 51 "lib/lamu0_lex.mll"
+# 50 "lib/lamu0_lex.mll"
              (
     match pstr_status with
     | StrNonEsc -> quotestr StrEsc lexbuf
@@ -414,25 +413,25 @@ let
       end
     | _ -> failwith "expected impossible"
   )
-# 418 "lib/lamu0_lex.ml"
+# 417 "lib/lamu0_lex.ml"
 
   | 2 ->
 let
-# 60 "lib/lamu0_lex.mll"
+# 59 "lib/lamu0_lex.mll"
          a
-# 424 "lib/lamu0_lex.ml"
+# 423 "lib/lamu0_lex.ml"
 = Lexing.sub_lexeme_char lexbuf lexbuf.Lexing.lex_start_pos in
-# 60 "lib/lamu0_lex.mll"
+# 59 "lib/lamu0_lex.mll"
            (
     push_ptr @@ c2s a;
     quotestr pstr_status lexbuf
   )
-# 431 "lib/lamu0_lex.ml"
+# 430 "lib/lamu0_lex.ml"
 
   | 3 ->
-# 64 "lib/lamu0_lex.mll"
+# 63 "lib/lamu0_lex.mll"
         (EOF)
-# 436 "lib/lamu0_lex.ml"
+# 435 "lib/lamu0_lex.ml"
 
   | __ocaml_lex_state -> lexbuf.Lexing.refill_buff lexbuf;
       __ocaml_lex_quotestr_rec pstr_status lexbuf __ocaml_lex_state

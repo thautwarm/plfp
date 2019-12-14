@@ -468,3 +468,20 @@ let lam o n e = lazy begin
 
 
 Finally, we assembly things together, and make a type inferencer for `Lamu0` at [main.ml](https://github.com/thautwarm/plfp/blob/master/lamu0/bin/main.ml).
+
+You can run the type infer REPL with: `dune exec lamu0 --profile release`:
+
+```
+let x = 1 in x;;     
+=> expr0 : ^int
+
+let y =
+   let f = fn x => fn y => y in 
+   let g = f 1 2.0 in 
+   f
+in y;;
+=> expr0 : ^int -> ^float -> ^float
+
+let f = fn y => y "123" in f (fn x => x);;
+=> expr0 : ^string
+```
