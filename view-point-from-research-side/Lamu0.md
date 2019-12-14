@@ -25,9 +25,17 @@ end
 
 
 
+## Terminology
+
+The following terms represent the same thing in this presentation.
+- interpretation (from a separate view of compiler)
+- `SYM` (from the view of routine implementation in OCaml)
+- algebra (from a view of mathematics)
+- compiler phrase(from an overall view from compiler)
+
 ## Background
 
-The steps through `type r` to the executable low level instructions are complex:
+The steps through `type repr` to the executable low level instructions are complex:
 Usually, a phrase `A` should be performed prior to some phrase `B`, so `B` depends on `A`.
 
 For instance, if the last phrase is back end code generation, it for sure depends on all of other phrases.
@@ -459,3 +467,8 @@ in y;;
 let f = fn y => y "123" in f (fn x => x);;
 => expr0 : ^string
 ```
+
+## References
+
+- [Algebra](http://okmij.org/ftp/tagless-final/Algebra.html)
+- [Tagless-Final Optimizations, Algebraically and Semantically](http://okmij.org/ftp/tagless-final/course2/)
