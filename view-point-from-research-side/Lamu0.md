@@ -80,7 +80,7 @@ it lacks of the facilities to work with multuple separate interpretations, like
 
 To address these problems, I proposed
 - an operation(`grow`) among the algebras to make reductions,
-- a module signature (`FSYM`) very close to the shape of `SYM` to composite and decouple interpretations.
+- a module signature(`FSYM`) very close to the shape of `SYM` to composite and decouple interpretations.
 
 which could be taken advantage of to solve above 3 pain spots fairly easy.
 
@@ -97,7 +97,7 @@ however, all of them have distinct representations(usually written as `type repr
 In this design, for `grow(m, mexpander)`, where `m` is an algebra,
 and `mexpander` can produce a new algebra(e.g., `scope->scope+type`) by composing with `m` via `grow`.
 
-Something crucial during "expanding the algebra" is the change of the representation type(`type repr` in an algebra.
+Something occurs naturally and simultaneously during expanding the algebra is, the expansion of the representation type(`type repr` in an algebra).
 
 ```ocaml
 A : module SYM with type repr = o (* base *)
@@ -107,7 +107,7 @@ B : module SYM with type repr = r (* result *)
 We check the "delta" from `o = A.repr` to `r = B.repr`,
 and represent it by type `c`, in other words:
 
-**`grow` transforms the type `repr` in the algebra(`SYM`) from `o` to `r`, with a delta `c`, while transforms the interpretation from `A` to `A+B`.**
+**`grow` transforms the type `repr` in the algebra(`SYM`) from `o` to `r`, with a delta `c`, while transforming the interpretation from `A` to `A+B`.**
 
 We extract the type expanding function out:
 ```ocaml
@@ -126,7 +126,7 @@ So the current goal is to extract the structure of `FSYM`, and make sure it sati
 
 - compositing separate interpretations:
 
-    It's natural, according the type of `grow` function.
+    This is already explicit and natural, according the type of `grow` function.
 
 - resolving the dependency relationships among dependent interpretations:
 
@@ -141,7 +141,7 @@ So the current goal is to extract the structure of `FSYM`, and make sure it sati
     of `module SYM with type repr = o` when we're impelementing `FSYM`.
 
 
-We point out that, following signature would suffice
+We point out that, the following signature would suffice
 
 ```ocaml
 module type FSYM = sig
