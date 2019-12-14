@@ -92,15 +92,23 @@ module SYMAggF = FSYMAgg(MySTAgg)
 module SYMAgg =
   (val grow  (module MySYMType : SYM with type r = int * scopeinfo Lazy.t * Typing.t Lazy.t)
              (module SYMAggF))
-let (i, l1, l2) = run (module SYMAgg) Q.tagless
-let _ = Lazy.force l1
-let return = MySTType.TC.prune @@ Lazy.force l2
+
+let (number_of_term, scope, type') = run (module SYMAgg) Q.tagless
+let return =
+    let _ = Lazy.force scope in
+    let type' = Lazy.force type' in
+    MySTType.TC.prune @@ type'
 end
 
 let flip f a b = f b a
 let _ =
-  let buf = Lexing.from_channel stdin in
-  let bs = List.fold_right List.cons (run_parser buf) [] in
-  (flip List.iter) bs @@ fun res ->
-  let module M = App(struct let tagless = res end) in
-  Printf.printf "%s\n" @@ Builder.dumpstr (Builder.mk_show_named_nom (module M.MySTType.TC)) M.return
+  let rec repl() =
+    let buf = Lexing.from_channel stdin in
+    let bs = List.fold_right List.cons (run_parser buf) [] in
+    (flip List.iteri) bs @@ fun i res ->
+    let module M = App(struct let tagless = res end) in
+    Printf.printf "=> expr%d : %s\n" i @@
+        Builder.dumpstr (Builder.mk_show_named_nom (module M.MySTType.TC)) M.return;
+    print_newline();
+    repl()
+  in repl()

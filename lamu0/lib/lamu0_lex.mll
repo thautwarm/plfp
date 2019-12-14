@@ -41,7 +41,6 @@ and quotestr pstr_status = parse
       | NonStr -> quotestr StrNonEsc lexbuf
       | StrNonEsc ->
         let s = (String.concat "" @@ List.rev !pointer) in
-        Printf.printf "%s\n" s;
         STRING s
       | StrEsc -> begin
         push_ptr @@ c2s a;
