@@ -80,7 +80,7 @@ it lacks of the facilities to work with multuple separate interpretations, like
 
 To address these problems, I proposed
 - an operation(`grow`) among the algebras to make reductions,
-- a module signature (`FSYM`) very close the shape of `SYM` to composite and decouple interpretations.
+- a module signature (`FSYM`) very close to the shape of `SYM` to composite and decouple interpretations.
 
 which could be taken advantage of to solve above 3 pain spots fairly easy.
 
@@ -129,7 +129,7 @@ val grow: 'o 'c 'r.
     (module SYM with type repr = 'r)
 ```
 
-So our goal is to extract the structure of `FSYM`, and make sure it satisfy our goals:
+So the current goal is to extract the structure of `FSYM`, and make sure it satisfy our final goals:
 
 - compositing separate interpretations:
 
