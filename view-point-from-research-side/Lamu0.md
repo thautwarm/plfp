@@ -97,14 +97,7 @@ however, all of them have distinct representations(usually written as `type repr
 In this design, for `grow(m, mexpander)`, where `m` is an algebra,
 and `mexpander` can produce a new algebra(e.g., `scope->scope+type`) by composing with `m` via `grow`.
 
-
-We can also have an easier thought:
-1. An interpretation needs an implementation of `SYM`.
-2. Some interpretations are not independent.
-3. `mexpander` is the incomplete form of the aggregation of some independent interpretations.
-    For instance, if `B` depends on `A`, transforming `A` to `A+B` is what `mexpander` does.
-
-Something crucial during "expanding the algebra" is the change of the representation type(`type repr` in a algebra/`SYM`).
+Something crucial during "expanding the algebra" is the change of the representation type(`type repr` in an algebra.
 
 ```ocaml
 A : module SYM with type repr = o (* base *)
@@ -167,7 +160,7 @@ module type FSYM = sig
 end
 ```
 
-Deriving a `FSYM` from `SYM` is trivial:
+Deriving an `FSYM` from `SYM` is trivial:
 
 Besides the common part
 ```ocaml
