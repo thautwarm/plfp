@@ -2,11 +2,7 @@ NOTE: If you'd install `remu_ts` and `remu_scope`, clone them from [RemuLang](ht
 
 ## FSYM: An Abstraction On Tagless-Final Style To Compositing And Decoupling Multiple Interpretations
 
-`Lamu0` is a very simple and basic programming language, but the implementation in
-
-   https://github.com/thautwarm/plfp/tree/master/lamu0
-
-shows an approach to use Tagless Final to
+`Lamu0` is a very simple and basic programming language, but the implementation in [plfp/lamu0](https://github.com/thautwarm/plfp/tree/master/lamu0) shows an approach to use Tagless Final to
 
 - handle the case that the order of interpretations is significant.
 - allow the composition of decoupled compiler phrases
@@ -18,12 +14,12 @@ Given the grammar
 type litype = IntT | FloatT | StringT
 
 module type SYM = sig
-  type r
-  val letl : string -> r -> r -> r
-  val lam  : string -> r -> r
-  val app  : r -> r -> r
-  val lit  : litype -> string -> r
-  val var  : string -> r
+  type repr
+  val letl : string -> repr -> repr -> repr
+  val lam  : string -> repr -> repr
+  val app  : repr -> repr -> repr
+  val lit  : litype -> string -> repr
+  val var  : string -> repr
 end
 ```
 
@@ -54,7 +50,7 @@ Another intuituve example, to perform type checking/inference, we shall understa
 let x = 1               |  identify the occurrences of
    let y = 2            |  a type variable
    in y + x-------------|
-in x--------------------|
+in x---------------------
 ```
 
 More instances could be found in the real world:
@@ -69,11 +65,16 @@ free variables of a function.
 The tagless final approach works for the polymorphisms of
 interpreting a given "grammar", however,
 it lacks of the facilities to work with multuple separate interpretations, like
+
 - **compositing separate interpretations**
 - **resolving the dependency relationships among dependent interpretations**
 - **decoupling the dependent interpretations as much as possible**
 
-To address this problem, I proposed an operation among the algebras to make reductions, which could be taken advantage of to solve above 3 pain spots fairly easy.
+To address these problems, I proposed
+- an operation(`grow`) among the algebras to make reductions,
+- a module signature (`FSYM`) very close the shape of `SYM` to composite and decouple interpretations.
+
+which could be taken advantage of to solve above 3 pain spots fairly easy.
 
 ## Introduction
 
@@ -85,16 +86,17 @@ and I call it `grow`.
 `grow (grow (grow zero fst) snd) third`, where `zero`, `grow (zero, fst)`, and similar stuffs are algebras(`module SYM`),
 however, all of them have distinct representations(usually written as `type repr` in a `SYM`).
 
-In this design, for `grow(m, mexpander)`, where `m` is an algebra, `mexpander` can produce a composite algebra(e.g., `scope -> scope + typed`) when using `m`.
+In this design, for `grow(m, mexpander)`, where `m` is an algebra,
+and `mexpander` can produce a new algebra(e.g., `scope->scope+type`) by composing with `m` via `grow`.
 
 
 We can also have an easier thought:
 1. An interpretation needs an implementation of `SYM`.
 2. Some interpretations are not independent.
-3. `mexpander` is the incomplete form of the aggregation
-of some independent interpretations. For instance, if `B` depends on `A`, map `A` to `B + A` is what `mexpander` does.
+3. `mexpander` is the incomplete form of the aggregation of some independent interpretations.
+    For instance, if `B` depends on `A`, transforming `A` to `A+B` is what `mexpander` does.
 
-Something crucial during "expanding the algebra" is the change of the representation type(`type repr` in a algebra).
+Something crucial during "expanding the algebra" is the change of the representation type(`type repr` in a algebra/`SYM`).
 
 ```ocaml
 A : module SYM with type repr = o (* base *)
@@ -102,25 +104,53 @@ B : module SYM with type repr = r (* result *)
 ```
 
 We check the "delta" from `o = A.repr` to `r = B.repr`,
-and represent it with `type c`:
-`grow` change the type `repr` of the algebra(`SYM`) from `o` to `r`, with a delta `c`.
+and represent it by type `c`, in other words:
+
+**`grow` transforms the type `repr` in the algebra(`SYM`) from `o` to `r`, with a delta `c`, while transforms the interpretation from `A` to `A+B`.**
 
 We extract the type expanding function out:
 ```ocaml
-let combine : o -> c -> r
+val combine : o -> c -> r
 ```
 
-For the sake of using tagless final approach, we make `A->A+B` similar to a `SYM`,
-and I call it `FSYM`, representing it's a functor from `SYM` to `SYM`,
-however maybe due to my lack of improvements for the implementation, I didn't actually use module functor.
+And extract the interpretation expanding function out:
+```ocaml
+val grow: 'o 'c 'r.
+    (module SYM with type repr = 'o) ->
+    (module FSYM with type o ='o and type c = 'c and type r = 'r) ->
+    (module SYM with type repr = 'r)
+```
+
+So our goal is to extract the structure of `FSYM`, and make sure it satisfy our goals:
+
+- compositing separate interpretations:
+
+    It's natural, according the type of `grow` function.
+
+- resolving the dependency relationships among dependent interpretations:
+
+    We're supposed to make sure `FSYM` can use the interpreted result of `module SYM with type repr = o`
+    to implement the interpretion `module SYM with type repr=r`.
+
+- decoupling the dependent interpretations as much as possible:
+
+    We're supposed to decouple the implementation of `module SYM with type repr = o` and `FSYM`.
+    
+    That is to say, we don't have to, and even shouldn't know or aware the implementation
+    of `module SYM with type repr = o` when we're impelementing `FSYM`.
+
+
+We point out that, following signature would suffice
 
 ```ocaml
 module type FSYM = sig
     type r
     type c (*delta*)
     type o
-    val combine : o -> c -> r
-    
+
+    val combine  : o -> c -> r
+    val project  : r -> o
+
     val letl : o -> string -> r -> r -> c
     val lam  : o -> string -> r -> c
     val app  : o -> r -> r -> c
@@ -129,132 +159,79 @@ module type FSYM = sig
 end
 ```
 
-In `FSYM`, an operator of type `a -> b -> ... -> r`,
-will be the type `o -> a -> b -> ... -> c`, where `o` is the original `repr` of an algebra,
-`r` is the `repr` of the result algebra transformed by `fun m -> grow(m, (module FSYM))`,
-`c` is the delta of the change from `o` to `r`.
+Deriving a `FSYM` from `SYM` is trivial:
 
-So then type of `grow` is 
-
+Besides the common part
 ```ocaml
-'o 'c 'r.
-(module SYM with type r = 'o) ->
-(module FSYM with type o ='o and type c = 'c and type r = 'r) ->
-(module SYM with type r = 'r)
+sig
+    type o
+    type c (* delta from o to c *)
+    type r
+
+    val combine  : o -> c -> r
+    val project  : r -> o
+end
 ```
+Any operator of type `a -> b -> ... -> r` in `SYM`,
+is supposed to be transformed to `o -> a -> b -> ... -> c` in `FSYM`,
+where the symbols `o, c, r` keep the same meanings as the aforementioned:
 
-Besides, For `grow(A, A->A+B) = A+B`, `A+B` needs to implement the tagless final interpretation for both `repr=o` and `repr=r=o+c`, let's just check the `lam` operator, and remember we already have `val combine : o -> c -> r`:
+- `o` is the original `repr` of the original algebra `A`,
+- `r` is the `repr` of the result algebra(`A+B`) transformed by `grow(A, B)`,
+- `c` is the delta of the change from `o` to `r`. There's no algebra like `SYM`, but exactly a functor `A->A+B`.
 
-- `A`:
+To elaborate, we can use `lam` operator as an examplar:
+
+- in `SYM`/algebra/interpretation `A`:
    ```ocaml
    val lam_1: string -> o -> o
    ```
 
-- `A->A+B`:
+- in **`FSYM`**, `A->A+B`:
     ```ocaml
     val lam_2: o -> string -> r -> c
     ```
 
-- `A+B`
+- in `SYM`/algebra/interpretation `A+B`
     ```ocaml
     val lam_3: string -> r -> r
     ```
 
 We now need to implement `lam_3` via `lam_1` and `lam_2`.
 
-To use `lam_1` in `lam_3`, I think it's natural:
-`o` is "included" in `r`, so we should be able to project `r` to `o`:
+Recall the last 2 of our goals which haven't been accomplished:
 
-```ocaml
-let lam_3 (argname: string) (body: r) =
-    let body_o: o = project body in
-    let o = lam_1 argname body_o in
-    ...
-```
+- decoupling the dependent interpretations as much as possible:
 
-So we introduce `val project: r -> o` into `FSYM`.
+   Which is to say, `lam_2` and `lam_3` shouldn't aware how `lam_1` gets
+   implemented, and it's easy to satisfy:
 
-```ocaml
-module type FSYM = sig
-    type r
-    type c (*delta*)
-    type o
-    val combine : o -> c -> r
-    val project: r -> o
-    
-    val letl : o -> string -> r -> r -> c
-    val lam  : o -> string -> r -> c
-    val app  : o -> r -> r -> c
-    val lit  : o -> litype -> string -> c
-    val var  : o -> string  -> c
-end
-```
+   ```ocaml
+    let lam_3 (argname: string) (body: r) =
+        let body_o: o = project body in
+        let o = lam_1 argname body_o in (* HIGHLIGHTING HERE! *)
+        ...
+   ```
 
-For `val lam_2: o -> string -> r -> c`, it uses the interpretation result of the last phrase(typed `o`), and the argname(`string`), as well as the interpreted body(`r=o+c`), and return a `c`.
+   Of course, `lam_1`, and anything else for implementing the prior interpretation(a.k.a `A`), shouldn't be referred in `lam_2`'s implementation,
+   or how `lam_3` uses `lam_2`.
 
-Now just give the implementation of `lam_3` in the following code block. Actually I don't know yet
-how to explain how I came up with it, but it's tidy, isn't it?
-
-```ocaml
-let lam_3 (argname: string) (body: r) =
-    let body_o: o = project body in
-    let o = lam_1 argname body_o in
-    let c = lam_2 o argname body in
-    combine o c
-```
-
-
-The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/final.ml#L28).
-
-
-## Analysis
-
-Let's review our goals aforementioned.
-
-1. **decoupling the dependent interpretations as much as possible**
-
-    Each interpretation is a `SYM`, and `FSYM` is for compositing `SYM`s.
-
-    Notice that, in `FSYM/A->A+B`, we don't need to care how interpretation for `A` is proceeding.
-
-    **We just focus on how to use the result from A to implement B**, and no need to care about how
-    `A` and `B` get composed.
-
-    Check the type signature of `lam_2`: `val lam_2: o -> string -> r -> c`:
-    - `o` here is from `A`, already computed.
-    - `r` here is the inner result, we can deconstruct it to `o` and `c`, if needed.
-    - `c` here is the **only result** we have to compute in the process of `A->A+B`.
-
-    Hence interpretations for `o` and `c/r` are separated.
-
-    Interpretion for `r` derives from interpretion for `c`, and `val combine: o -> c -> r` is responsible for this).
-
-2. **resolving the dependency relationships among dependent interpretations**
-
-    This is pretty easy to explain, check the type signature of `lam_2`:
-
-    `val lam_2: o -> string -> r -> c`,
-    
-    the current expression's interpretation result is given in `o`,
-    the inner expression's interpretation result is given in `r`.
-
-    **You know everything from the last phrase.**
-
-3. **compositing separate interpretations**
+- resolving the dependency relationships among dependent interpretations:
    
-    I guess no need to explain this. If you have any problem,
-    check the type signature of `grow`:
+   Hence, `lam_2` should use the result of the prior interpretation(a.k.a `A`),
+   and it's quite easy as well:
 
-    ```ocaml
-    'o 'c 'r.
-    (* SYM : A; repr : o *)
-    (module SYM with type r = 'o) ->
-    (* FSYM : A->A+B *)
-    (module FSYM with type o ='o and type c = 'c and type r = 'r) ->
-    (* SYM: A+B; repr=r=o+c *)
-    (module SYM with type r = 'r)
-    ```
+   ```ocaml
+    let lam_3 (argname: string) (body: r) =
+    let body_o: o = project body in
+    let o = lam_1 argname body_o in
+    let c = lam_2 o argname body in  (* HIGHLIGHTING HERE! *)
+    combine o c
+   ```
 
+
+The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/final.ml#L28),
+but notice that the type `repr` in `SYM` is written in a shorter form `r`.
 
 \* In fact, if we use lazy types as the `repr` of each interpretation/phrase,
 the order of interpretation can be more flexible.
@@ -264,9 +241,7 @@ Check `Lamu0` in the sub-section `Application`.
 
 ## Application
 
-
 [Lamu0](https://github.com/thautwarm/plfp/tree/master/lamu0) gives a very simple example to compose the existing and decoupled frameworks for compilers.
-
 
 ### Scoping: Name Resolution
 
@@ -293,10 +268,9 @@ let x_assign = enter let_scope "x" in
 let x_load = require let_scope "x" 
 ```
 
-With this snippet, you cab check `assert (x_assign = x_load)`.
+With this snippet, you can check `assert (x_assign = x_load)`.
 
-With tagless final extended by `FSYM` abstraction and above framework,
-we can implement a standalone but composable interpretation for name resolution:
+With tagless final extended by `FSYM` abstraction and above existing framework, we can then implement a standalone but composable interpretation for name resolution:
 
 ```ocaml
 module Scoping = Remu_scope.Solve
