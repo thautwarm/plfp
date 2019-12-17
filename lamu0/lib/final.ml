@@ -1,13 +1,18 @@
 type litype = IntT | FloatT | StringT
 [@@deriving show { with_path = false }]
 
-(* to handle tagless final interpretations with DAG dependencies *)
-module type FSYM = sig
+module type FSYMComm = sig
   type r
   type c
   type o
   val combine: o -> c -> r
   val project: r -> o
+end
+
+(* to handle tagless final interpretations with DAG dependencies *)
+
+module type FSYM = sig
+  include FSYMComm
 
   val letl : o -> string -> r -> r -> c
   val lam  : o -> string -> r -> c

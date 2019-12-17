@@ -231,7 +231,7 @@ Recall the last 2 of our goals which haven't been accomplished:
    ```
 
 
-The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/final.ml#L28),
+The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/2745e4791ac2b6ea9102515b9d2cf8d375de4660/lamu0/lib/final.ml#L28-L59),
 but notice that the type `repr` in `SYM` is written in a shorter form `r`.
 
 \* In fact, if we use lazy types as the `repr` of each interpretation/phrase,
@@ -303,7 +303,7 @@ module FSYMScope(ST : STScope) = struct
 end
 ```
 
-The whole code can be found at [lamu0_ast.ml L5-L60](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/lamu0_ast.ml#L5-L60).
+The whole code can be found at [lamu0_ast.ml L5-L60](https://github.com/thautwarm/plfp/blob/2745e4791ac2b6ea9102515b9d2cf8d375de4660/lamu0/lib/lamu0_ast.ml#L5-L60).
 
 We unroll the implementation of `lam`:
 
@@ -429,7 +429,7 @@ module FSYMType(ST: STType) = struct
 end
 ```
 
-The whole code of this could be found at [Lamu0_ast.ml #L62-L129](https://github.com/thautwarm/plfp/blob/master/lamu0/lib/lamu0_ast.ml#L62).
+The whole code of this could be found at [Lamu0_ast.ml #L62-L129](https://github.com/thautwarm/plfp/blob/2745e4791ac2b6ea9102515b9d2cf8d375de4660/lamu0/lib/lamu0_ast.ml#L62).
 
 For a rough sketch, let's check the implementation `lam` again:
 
