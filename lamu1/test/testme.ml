@@ -1,12 +1,12 @@
 open Lamu1
 open Final
-open Phrases
+open Phases
 
 let term =
   let open SYMSelf in
   letl "a" None (lit IntT "23") (var "a")
 
-let apply_phrases (term : Final.SYMSelf.r) =
+let apply_phases (term : Final.SYMSelf.r) =
   let records : (int * Scoping.repr Lazy.t * Typing.repr Lazy.t) array ref =
     ref [||]
   in
@@ -16,7 +16,7 @@ let apply_phrases (term : Final.SYMSelf.r) =
   let term_cnt = ref 0 in
   let symtypes : (Scoping.sym, Typing.repr) BatMap.t ref = ref BatMap.empty in
 
-  let numer = Phrases.numbering term_cnt in
+  let numer = Phases.numbering term_cnt in
   let module P1 = struct
     type t = int * Scoping.repr Lazy.t
   end in
@@ -24,7 +24,7 @@ let apply_phrases (term : Final.SYMSelf.r) =
     type t = int * Scoping.repr Lazy.t * Typing.repr Lazy.t
   end in
   let scoper =
-    Phrases.scoping
+    Phases.scoping
     @@ object
          method combine : int -> Scoping.repr Lazy.t -> P1.t =
            fun l r -> l, r
@@ -88,7 +88,7 @@ let apply_phrases (term : Final.SYMSelf.r) =
        end
   in
   let recorder =
-    Phrases.recording
+    Phases.recording
     @@ object
          method store = records
 
@@ -108,6 +108,6 @@ let apply_phrases (term : Final.SYMSelf.r) =
   end
 
 let _ =
-    let res = apply_phrases term in
+    let res = apply_phases term in
     let open Remu_ts in
     print_endline @@ Builder.dumpstr (Builder.mk_show_named_nom (res#tc)) res#typ

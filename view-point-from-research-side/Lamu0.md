@@ -5,7 +5,7 @@ NOTE: If you'd install `remu_ts` and `remu_scope`, clone them from [RemuLang](ht
 `Lamu0` is a very simple and basic programming language, but the implementation in [plfp/lamu0](https://github.com/thautwarm/plfp/tree/master/lamu0) shows an approach to use Tagless Final to
 
 - handle the case that the order of interpretations is significant.
-- allow the composition of decoupled compiler phrases
+- allow the composition of decoupled compiler phases
 
 
 Given the grammar
@@ -31,14 +31,14 @@ The following terms represent the same thing in this presentation.
 - interpretation (from a separate view of compiler)
 - `SYM` (from the view of routine implementation in OCaml)
 - algebra (from a view of mathematics)
-- compiler phrase(from an overall view from compiler)
+- compiler phase(from an overall view from compiler)
 
 ## Background
 
 The steps through `type repr` to the executable low level instructions are complex:
-Usually, a phrase `A` should be performed prior to some phrase `B`, so `B` depends on `A`.
+Usually, a phase `A` should be performed prior to some phase `B`, so `B` depends on `A`.
 
-For instance, if the last phrase is back end code generation, it for sure depends on all of other phrases.
+For instance, if the last phase is back end code generation, it for sure depends on all of other phases.
 
 ```
 A -> B -> ... -> C
@@ -47,7 +47,7 @@ A -> B -> ... -> C
           \   \|/
             CodeGen
 
-for each phrase, it's either prior to phrase CodeGen or phrase CodeGen itself.
+for each phase, it's either prior to phase CodeGen or phase CodeGen itself.
 ```
 
 Another intuituve example, to perform type checking/inference, we shall understand the scope information firstly.
@@ -234,7 +234,7 @@ Recall the last 2 of our goals which haven't been accomplished:
 The whole code for `grow` can be found at [final.ml L28-L59](https://github.com/thautwarm/plfp/blob/2745e4791ac2b6ea9102515b9d2cf8d375de4660/lamu0/lib/final.ml#L28-L59),
 but notice that the type `repr` in `SYM` is written in a shorter form `r`.
 
-\* In fact, if we use lazy types as the `repr` of each interpretation/phrase,
+\* In fact, if we use lazy types as the `repr` of each interpretation/phase,
 the order of interpretation can be more flexible.
 
 Check `Lamu0` in the sub-section `Application`.
@@ -334,7 +334,7 @@ It's pretty easy, and can be composed into the compilation pipeline, for every p
 
 Type inference requires already knowing the scope information.
 
-So it depends on the previous phrase, name resolution.
+So it depends on the previous phase, name resolution.
 
 Firstly we check an existing framework providing type inference, [remu_ts](https://github.com/RemuLang/remu-type-system).
 
