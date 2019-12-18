@@ -1,5 +1,4 @@
 open Final
-module DyArr = BatDynArray
 
 let numbering (cnt: int ref) =
   let module S = struct
