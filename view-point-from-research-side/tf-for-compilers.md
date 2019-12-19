@@ -343,7 +343,7 @@ let repr_b = Lazy.force repr_b (* total completion of B *)
 ```
 ## Example
 
-A more clean implementation of Tagless Final compiler is [`Lamu1`](https://github.com/thautwarm/plfp/blob/master/lamu1) instead of `Lamu0`.
+A cleaner implementation of Tagless Final compiler is [`Lamu1`](https://github.com/thautwarm/plfp/blob/master/lamu1) instead of `Lamu0`.
 
 `Lamu1` extends `lamu0` with principal types.
 
