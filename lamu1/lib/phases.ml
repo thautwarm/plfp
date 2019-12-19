@@ -100,7 +100,7 @@ end
 let scoping = MKScoping.mk
 
 module Typing = struct
-  include Typ
+  include Remu_ts.Infer
 
   type repr = t
 end
@@ -118,16 +118,17 @@ module MKTyping = struct
         ; type_of_name : o' -> string -> Typing.repr
         ; type_of_repr : r' -> Typing.repr
         ; annotate : o' -> string -> Typing.repr -> unit
-        ; int_type : Typing.repr
-        ; float_type : Typing.repr
-        ; str_type : Typing.repr >) =
+        ; primitives: string list>) =
     let module TC = (val required_st#env) in
+    let module TEval = Type_final.Builder(TC) in
+    let teval = (module TEval: Type_final.SYM with type repr=Typing.repr) in
     let annotate = required_st#annotate in
     let type_of_name = required_st#type_of_name in
     let type_of_repr = required_st#type_of_repr in
-    let int_type = required_st#int_type in
-    let float_type = required_st#float_type in
-    let str_type = required_st#str_type in
+    List.iter (fun x -> ignore @@ TEval.add_type x) required_st#primitives;
+    let int_type = TEval.add_type "int" in
+    let float_type = TEval.add_type "float" in
+    let str_type = TEval.add_type "str" in
     let ( = ) = TC.unify in
     let module S = struct
       type o = o'
@@ -145,9 +146,8 @@ module MKTyping = struct
           (
            let eo2 = project e2 in
            let var_of_n = match t with
-               | Some (Type_final.SYMSelf.({e=t})) ->
-                 let module S = Type_final.Builder(TC) in
-                 t (module S: Type_final.SYM with type repr=Typ.t)
+               | Some t ->
+                 Type_final.run teval t
                | None -> TC.new_tvar ()
            in
            annotate eo2 n var_of_n;
@@ -175,15 +175,12 @@ module MKTyping = struct
       let lit _ lt v =
         lazy
           ( match lt with
-          | StringT -> str_type
-          | IntT -> int_type
-          | FloatT -> float_type )
+            | StringT -> str_type
+            | IntT -> int_type
+            | FloatT -> float_type)
 
       let var o n =
-        lazy
-          (let var1 = TC.new_tvar () in
-           let var2 = type_of_name o n in
-           if var1 = var2 then var1 else raise TypeError)
+        lazy (type_of_name o n)
     end in
     (module S : FSYM with type o = o' and type c = c' and type r = r')
 end

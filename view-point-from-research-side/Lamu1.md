@@ -49,10 +49,34 @@ and `Forall` is for making [principal types](https://en.wikipedia.org/wiki/Princ
 
 By the use of principal types, we can make polymorphic functions:
 ```
-let id_mono : int -> int = fun x => x in ...
-let id_poly : forall a. a -> a = fun x => x in ...
+let id_mono : int -> int = fn x => x in ...
+let id_poly : forall a. a -> a = fn x => x in ...
 ```
 
 
 
+TODO...
 
+
+
+## Playground
+
+
+Try `Lamu1`'s type inference with `dune exec lamu1 --profile release`.
+
+```ocaml
+let f : forall 'a. 'a -> 'a =                                        
+     fn x => x 
+in let g = f in let _ = g 1 in g;;
+=> expr0 : ^int -> ^int
+
+let f : forall 'a. 'a -> 'a =
+    fn x => x
+in let g = f 1 in f;;
+=> expr0 : forall {a} a -> a
+
+let f: forall 'a. 'a -> 'a =
+   fn x => x
+in let g = f 1 in g;;
+=> expr0 : ^int
+```

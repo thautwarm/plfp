@@ -5,14 +5,9 @@ type token =
   | STRING of (string)
   | SEMICOLON
   | RP
-  | RBB
-  | RB
   | QUOTE
-  | OR
   | LP
   | LET
-  | LBB
-  | LB
   | INT of (string)
   | IN
   | IMPLY
@@ -21,6 +16,7 @@ type token =
   | FN
   | FLOAT of (string)
   | EOF
+  | DOT
   | COMMA
   | COLON
   | ASSIGN

@@ -18,7 +18,7 @@ let run_parser lexbuf =
   with
   | Error ->
     fprintf stderr "%a: syntax error\n" print_position lexbuf;
-   exit @@ -1
+    exit @@ -1
 
 
 let apply_phases term =
@@ -94,12 +94,7 @@ let apply_phases term =
            fun (i, _, _) ->
              let _, _, t = !records.(i) in
              Lazy.force t
-
-         method int_type = TC.new_type "int"
-
-         method float_type = TC.new_type "float"
-
-         method str_type = TC.new_type "str"
+         method primitives = []
        end
   in
   let recorder =
@@ -133,5 +128,6 @@ let _ =
     let open Remu_ts in
     Printf.printf "=> expr%d : %s\n" i @@
         Builder.dumpstr (Builder.mk_show_named_nom @@ res#tc) res#typ;
+    print_newline();
     repl()
   in repl()

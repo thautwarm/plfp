@@ -8,12 +8,7 @@ module Typ = Type_final.SYMSelf
 %token IN
 %token FN
 %token LP
-%token OR
 %token RP
-%token LB
-%token RB
-%token LBB
-%token RBB
 %token COMMA
 %token IMPLY
 %token ARROW
@@ -21,6 +16,7 @@ module Typ = Type_final.SYMSelf
 %token COLON
 %token FORALL
 %token QUOTE
+%token DOT
 %token <string>INT
 %token <string>FLOAT
 %token <string>STRING
@@ -32,13 +28,13 @@ module Typ = Type_final.SYMSelf
 
 %%
 
-
-prog: stmts=separated_list(SEMICOLON, expr) EOF {stmts};
+prog: stmts=separated_list(SEMICOLON, expr) EOF {stmts}
+;
 
 expr:
     LET n=ID ASSIGN bound=expr IN body=expr {Exp.letl n None bound body}
   | LET n=ID COLON t=typ ASSIGN bound=expr IN body=expr {Exp.letl n (Some t) bound body}
-  | FN n=ID ARROW body=expr {Exp.lam n body}
+  | FN n=ID IMPLY body=expr {Exp.lam n body}
   | a=app {a}
   ;
 
@@ -62,7 +58,7 @@ typ:
   | tapp=typeapp {tapp}
   | arg=typlit ARROW ret=typ { Typ.arrow arg ret}
   (*  | LB elts=separated_list(COMMA, typ) RB {Tuple elts} *)
-  | FORALL LBB ns=separated_list(COMMA, freshtype) RBB ty=typ {Typ.forall ns ty}
+  | FORALL ns=separated_list(COMMA, freshtype) DOT ty=typ {Typ.forall ns ty}
   (*  | LBB fs=rowtyp RBB {Record(fs)} *)
   (*  | LBB witness=typ RBB IMPLY bounded=typ {Implicit(witness, bounded)} *)
   ;

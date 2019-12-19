@@ -1,5 +1,4 @@
 type litype = IntT | FloatT | StringT
-module Typ = Remu_ts.Infer
 
 module type SYM = sig
   type repr

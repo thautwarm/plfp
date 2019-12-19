@@ -79,12 +79,7 @@ let apply_phases (term : Final.SYMSelf.r) =
            fun (i, _, _) ->
              let _, _, t = !records.(i) in
              Lazy.force t
-
-         method int_type = TC.new_type "int"
-
-         method float_type = TC.new_type "float"
-
-         method str_type = TC.new_type "str"
+         method primitives = []
        end
   in
   let recorder =

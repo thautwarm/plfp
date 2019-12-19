@@ -21,6 +21,7 @@ rule read = parse
   | decimal { INT (Lexing.lexeme lexbuf) }
   | "->" { ARROW }
   | "=>" { IMPLY }
+  | "." {DOT}
   | "forall" { FORALL }
   | "let" {LET}
   | "in" {IN}
@@ -28,20 +29,15 @@ rule read = parse
   | id { ID (Lexing.lexeme lexbuf) }
   | white { read lexbuf }
   | '\'' { QUOTE }
-  | '|' {OR}
   | '(' {LP}
   | ')' {RP}
-  | '[' { LB }
-  | ']' { RB }
-  | '{' { LBB }
-  | '}' { RBB }
   | ':' { COLON }
-  | '=' { ASSIGN }
+  | '=' { ASSIGN}
   | ',' { COMMA }
   | ';' { SEMICOLON }
-  | ";;" { EOF }
   | "\"" {quotestr StrNonEsc lexbuf}
   | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
+  | ";;" { EOF }
   | eof { EOF }
 
 and quotestr pstr_status = parse
@@ -65,8 +61,8 @@ and quotestr pstr_status = parse
       end
     | _ -> failwith "expected impossible"
   }
+  | eof {EOF}
   | _ as a {
     push_ptr @@ c2s a;
     quotestr pstr_status lexbuf
   }
- | eof {EOF}
