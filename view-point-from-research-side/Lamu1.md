@@ -15,17 +15,35 @@ In practice, we prefer `f: forall a. a -> a` rather than `a -> a`(and `a` will b
 
 Now we're using a simple but reasonable type inference given by `remu_ts` library, to achieve the polymorphic functions, we can do manual annotations. 
 
-In fact, it's not a workaround. We'll see in the future that generalising `let f = fn x => x` is not a good idea, and distinguishing `a -> a` from `forall a. a -> a` is a blessing for it actually avoids being ambiguous.
+In fact, it's not a workaround. We'll see in the future that
+automatically generalising `let f = fn x => x` might not be a good idea, and distinguishing `a -> a` from `forall a. a -> a` is a blessing for it actually avoids being ambiguous.
 
 So, we slightly modify our grammar:
 
 ```ocaml
-module Typ = Remu_ts.Infer
+module Type_final = struct
+  module type SYM = sig
+    type repr
+    val app   : repr -> repr -> repr
+    val arrow : repr -> repr -> repr
+    val fresh : string -> repr
+    val nom   : string -> repr
+    val forall: string list -> repr -> repr
+  end
+
+  module SYMSelf = struct
+      type r = {
+        e: 'a. (module SYM with type repr = 'a) -> 'a
+      }
+      ..
+  end
+end
 type litype = IntT | FloatT | StringT
 
 module type SYM = sig
   type r
-  val letl : string -> Typ.t -> r -> r -> r
+  val letl : string ->
+             Type_final.SYMSelf.r option -> r -> r -> r
   val lam  : string -> r -> r
   val app  : r -> r -> r
   val lit  : litype -> string -> r
@@ -33,19 +51,9 @@ module type SYM = sig
 end
 ```
 
-A partial definition of `Typ.t` is:
 
-```ocaml
-type t =
-  | App      of t * t
-  | Arrow    of t * t
-  | Nom      of int
-  | Forall   of string list * t
-  | Fresh    of string
-```
-
-`Nom` is a constructor for making [nominal types](https://en.wikipedia.org/wiki/Nominal_type_system),
-and `Forall` is for making [principal types](https://en.wikipedia.org/wiki/Principal_type).
+`Type_final.SYMSelf.nom` is a constructor for making [nominal types](https://en.wikipedia.org/wiki/Nominal_type_system),
+and `Type_final.SYMSelf.forall` is for making [principal types](https://en.wikipedia.org/wiki/Principal_type).
 
 By the use of principal types, we can make polymorphic functions:
 ```
@@ -53,14 +61,7 @@ let id_mono : int -> int = fn x => x in ...
 let id_poly : forall a. a -> a = fn x => x in ...
 ```
 
-
-
-TODO...
-
-
-
 ## Playground
-
 
 Try `Lamu1`'s type inference with `dune exec lamu1 --profile release`.
 

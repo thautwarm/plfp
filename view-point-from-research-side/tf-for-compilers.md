@@ -121,9 +121,9 @@ In this way, the overlap between name resolution and type inference gets elimina
 
 However, the problem comes: How can we make sure the separately implemented compiler phases can get composited?
 
-# Tagless Final
+## Tagless Final For Compiler Phases
 
-## Quick Start for Tagless Final
+### Quick Start for Tagless Final
 
 ```ocaml
 module type SYM = sig
@@ -179,7 +179,7 @@ This is neat!
 Think that we implement each compiler phase, just like `SYMShow`, `SYMList`, `SYMNat`?
 
 
-# "Grammar"
+### "Grammar"
 
 Tagless Final firstly requires a grammar for the DSL, and it corresponds to our BNF gramamr.
 
@@ -200,7 +200,7 @@ end
 
 See the implementation of parser:
 
-```ocamlyacc
+```antlr
 expr:
     LET n=ID ASSIGN bound=expr IN body=expr {SYMSelf.letl n bound body}
   | FN n=ID ARROW body=expr {SYMSelf.lam n body}
@@ -210,9 +210,7 @@ expr:
 
 Then we got something that can be interpreted in various ways, instead of an AST!
 
-# Tagless Final For Compiler Phases
-
-## Expanding Representation
+### Expanding Representation
 
 The compiler phases are usually dependent.
 
@@ -261,7 +259,7 @@ type repr = scope * typ * closureinfo * lambdainfo * unique_name ->
 ...
 ```
 
-## Problems of Decoupling and Compositing
+### Problems of Decoupling and Compositing
 
 However, if we implement a `SYM` with `type repr = scope * typ`,
 
@@ -273,7 +271,7 @@ However, if we implement a `SYM` with `type repr = scope * typ`,
 
 To avoid above losses, just figure out a new abstraction on `SYM`, called `FSYM`.
 
-## FSYM
+### FSYM
 
 ```ocaml
 
@@ -317,14 +315,14 @@ let grow = fun
    end: SYM with type r = r')
 ```
 
-## Laziness, for Mutually Dependencies
+### Laziness, for Mutually Dependencies
 
 Given 2 compiler phase `A` and `B`, there might be such a case:
 
 `A` depends on a semi-complete `B`, total-completion of `B` depends on a whole `A`, but `B`'s
 semi-completion can be done independently.
 
-```
+```ocaml
 module AB = Grow(A)(B)
 
 (* including semi-completion of B *)

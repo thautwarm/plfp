@@ -21,3 +21,30 @@ Hello, here're my presentations, for introducing interestings stuffs of Programm
         let f = fn y => y "123" in f (fn x => x);;
         => expr0 : ^string
     ```
+
+2. [Tagless Final for Writing Compilers](https://github.com/thautwarm/plfp/blob/master/view-point-from-research-side/tf-for-compilers.md), for FP seminar of our Lab in 12/20/2019.
+  
+  Still about `FSYM`, but with better elaboration of the obstacles and why `FSYM` makes senses.
+
+  Also, a cleaner instance of using `FSYM` is implemented.
+  [Extending `Lamu0`](https://github.com/thautwarm/plfp/blob/master/view-point-from-research-side/Lamu1.md) with principal types.
+
+  ```F#
+    let f : forall 'a. 'a -> 'a =
+        fn x => x 
+    in let g = f in let _ = g 1 in g;;
+    => expr0 : ^int -> ^int
+
+    let f : forall 'a. 'a -> 'a =
+        fn x => x
+    in let g = f 1 in f;;
+    => expr0 : forall {a} a -> a
+
+    let f: forall 'a. 'a -> 'a =
+    fn x => x
+    in let g = f 1 in g;;
+    => expr0 : ^int
+
+    let y : str = 1 in y;;
+    Fatal error: exception Lamu1.Phases.TypeError
+  ```
