@@ -119,7 +119,7 @@ module type SYM = sig
    val succ: repr -> repr
 end
 
-(* we want: pass in a module, got an new interpretation *)
+(* we want: pass in a module, get a new interpretation *)
 
 module SYMSelf = struct
    type repr = {e : 'a. (module SYM with type repr = 'a) -> 'a}
