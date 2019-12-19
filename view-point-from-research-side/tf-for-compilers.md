@@ -33,7 +33,7 @@ there're quite a lot of phases we have to go through, even though we don't take 
   - eliminate high level language constructs like:
      - lambda
      - name shadowing(let binding)
-     - closures(free variables)
+     - closure(free variables)
   
 - To perform type inference
    
