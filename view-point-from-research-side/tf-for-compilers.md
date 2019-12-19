@@ -3,7 +3,7 @@
 Writing a compiler could consists of numerous steps.
 
 Therefore, a solution to allow compiler writers to
-- merely focus on only one step of the whole compilation,
+- merely focus on only one step of the whole compilation at one time,
 - keep away from awaring other dependent steps, and
 - able to composite the separate steps into a big one,
 
