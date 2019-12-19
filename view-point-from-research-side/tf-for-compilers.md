@@ -110,7 +110,7 @@ This might be considered trivial in many cases, but is crucial in my concerns.
 Of course, we can maintain a map from `string` to `type`, and push and pop `string`-`type` pairs when inferencing.
 
 However, it'd be beneficial if we have already transformed the symbols
-(like `x` in `let x = e in e'`) into unique ones, which will then make `A_x \cup {x: \sigma}` necessary,
+(like `x` in `let x = e in e'`) into unique ones, which will then make `A_x \cup {x: \sigma}` unnecessary,
 and the inference becomes:
 
 ```
