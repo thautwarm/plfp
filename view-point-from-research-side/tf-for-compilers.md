@@ -218,8 +218,10 @@ Then we got something that can be interpreted in various ways, instead of an AST
 
 The compiler phases are usually dependent.
 
-Type inference requires name resolution, so how can we implement them separately
-with Tagless Final?
+Type inference requires name resolution, so how can we
+- implement them separately, and
+- finally composite them
+by using Tagless Final?
 
 Guess we have implemented these phases, for type infer and name resolution,
 we shall have
@@ -240,7 +242,7 @@ end
 
 Alas, we cannot use the information from `SYMScope` in `SYMType`!
 
-How could we address this problem?
+So.. how could we address this problem?
 
 Recall the order of phases,
 
