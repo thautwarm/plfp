@@ -3,7 +3,7 @@
 
 type token = 
   | STRING of (string)
-  | SEMICON
+  | SEMICOLON
   | RP
   | RBB
   | RB

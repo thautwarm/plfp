@@ -3,7 +3,7 @@ module Typ = Remu_ts.Infer
 
 module type SYM = sig
   type repr
-  val letl : string -> Typ.t option -> repr -> repr -> repr
+  val letl : string -> Type_final.SYMSelf.r option -> repr -> repr -> repr
   val lam  : string -> repr -> repr
   val app  : repr -> repr -> repr
   val lit  : litype -> string -> repr
@@ -22,7 +22,7 @@ end
 module type FSYM = sig
   include FSYMComm
 
-  val letl : o -> string -> Typ.t option -> r -> r -> c
+  val letl : o -> string -> Type_final.SYMSelf.r option -> r -> r -> c
   val lam  : o -> string -> r -> c
   val app  : o -> r -> r -> c
   val lit  : o -> litype -> string -> c
@@ -65,7 +65,7 @@ let grow = fun
 (* the initial alg for better polymorphic use*)
 module SYMSelf = struct
   type r = {e: 'a . (module SYM with type repr = 'a) -> 'a}
-  let letl : string -> Typ.t option -> r -> r -> r =
+  let letl : string -> Type_final.SYMSelf.r option -> r -> r -> r =
     fun s t {e=e1} {e=e2} ->
     {e = fun (type a) ((module M: SYM with type repr = a) as m) -> M.letl s t (e1 m) (e2 m)}
   let lam : string -> r -> r =

@@ -64,7 +64,7 @@ module MKScoping = struct
       let return scopesym =
         Scoping.{ symbol = scopesym; id = !cur_scoperef }
 
-      let letl : o -> string -> Typ.t option -> r -> r -> c =
+      let letl : o -> string -> Type_final.SYMSelf.r option -> r -> r -> c =
        fun _ n t e1 e2 ->
         lazy
           ( ignore !!e1;
@@ -142,8 +142,14 @@ module MKTyping = struct
 
       let letl o n t e1 e2 =
         lazy
-          (let eo2 = project e2 in
-           let var_of_n = match t with Some t -> t | None -> TC.new_tvar () in
+          (
+           let eo2 = project e2 in
+           let var_of_n = match t with
+               | Some (Type_final.SYMSelf.({e=t})) ->
+                 let module S = Type_final.Builder(TC) in
+                 t (module S: Type_final.SYM with type repr=Typ.t)
+               | None -> TC.new_tvar ()
+           in
            annotate eo2 n var_of_n;
            let e1t = type_of_repr e1 in
            let e2t = type_of_repr e2 in
@@ -185,7 +191,7 @@ end
 let typing = MKTyping.mk
 
 module MKRecording = struct
-  let mk (type o') 
+  let mk (type o')
         (required_st:
         < store: o' array ref; cnt : int ref; id_of_repr: o' -> int>) =
       let store = required_st#store in
@@ -204,7 +210,8 @@ module MKRecording = struct
 
         let project (a, _) = a
 
-        let letl o (_: string) (_: Typ.t option) e1 e2 () = begin !!e1; !!e2; assign o () end
+        let letl o (_: string) (_: Type_final.SYMSelf.r option)
+                 e1 e2 () = begin !!e1; !!e2; assign o () end
         let lam o _ e () = begin !!e; assign o () end
         let app o e1 e2 () = begin !!e1; !!e2; assign o () end
         let lit o _ _ = assign o
