@@ -52,20 +52,24 @@ there're quite a lot of phases we have to go through, even though we don't take 
    and different free variables might be stored using different low level
    representations. So we need type inference.
    
-   **type inference < closure conversion**
+   `type inference < closure conversion`
 
 - To eliminate lambdas
    
    we're supposed to recursively lift lambdas to global functions, but any free variable shall be rejected here, thus this phase should start after closure conversions.
   
-   closure conversion < eliminating lambdas
+   `closure conversion < eliminating lambdas`
 
 Distinguishing scoped symbols from each other, detecting free variables, both of them
 are involved in the analysis for [**Scope**](https://en.wikipedia.org/wiki/Scope_(computer_science))s, or [name resolution](https://en.wikipedia.org/wiki/Name_resolution_(programming_languages)), thus
 
-   **name resolution < type inference**,
-   **name resolution < eliminating name shadowing**,
-   **name resolution < closure conversion**
+   ```
+   name resolution < type inference
+
+   name resolution < eliminating name shadowing
+
+   name resolution < closure conversion
+   ```
    
 Next, we can make a order for compiler phases, from source code to low level code:
 ```
