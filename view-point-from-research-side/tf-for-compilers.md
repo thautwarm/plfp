@@ -1,13 +1,18 @@
 # Tagless Final For Writing Compilers
 
-Writing a compiler consists of many steps, which could be quite numerous.
+Writing a compiler could consists of numerous steps.
 
-Hence, a solution to allow compiler writers to merely focus on only one step of compilation, keep away from awaring other dependent steps, and able to composite the separate steps into a big ones, could be beneficial(better for collaborations as well?).
+Therefore, a solution to allow compiler writers to
+- merely focus on only one step of the whole compilation,
+- keep away from awaring other dependent steps, and
+- able to composite the separate steps into a big one,
 
-Tagless Final is an approach for this demand, due to one of its useful feature:
-"interpreting a given (written) term from various perspectives".
+could be beneficial(better for collaborations as well?).
 
-# Problem
+Tagless Final can be an approach for this demand, due to one of its useful feature:
+"interpreting one term from various perspectives".
+
+## Problem
 
 Given a BNF grammar(hereafter as `Lamu0`),
 
@@ -20,16 +25,17 @@ app  ::= atomexpr
 atomexpr ::= INT | STRING | FLOAT | '(' expr ')'
 ```
 
-To compile the language `Lamu0` to a lower representation, there're several steps we have to go through:
+To compile the language `Lamu0` to a lower representation(like C),
+there're quite a lot of phases we have to go through, even though we don't take GC or optimizations into consideration here:
 
 - To generate low level code, we shall
-  - check validity of program: type checking
+  - check validity of program: type inference
   - eliminate high level language constructs like:
      - lambda
      - name shadowing(let binding)
      - closures(free variables)
   
-- To perform type checking
+- To perform type inference
    
    we're supposed to correctly identify different occurrences for a symbol, and assign the same type to the symbol's occurrences.
    
@@ -50,8 +56,7 @@ To compile the language `Lamu0` to a lower representation, there're several step
 
 - To eliminate lambdas
    
-   we're supposed to recursively lift lambdas to global functions, but it
-   should take care of free variables, thus should be done after closure conversions.
+   we're supposed to recursively lift lambdas to global functions, but any free variable shall be rejected here, thus this phase should start after closure conversions.
   
    closure conversion < eliminating lambdas
 
@@ -62,20 +67,19 @@ are involved in the analysis for [**Scope**](https://en.wikipedia.org/wiki/Scope
    **name resolution < eliminating name shadowing**,
    **name resolution < closure conversion**
    
-Next, assume we can do type checking with type inference together,
-we can make a order for compiler phases, from source code to low level code:
+Next, we can make a order for compiler phases, from source code to low level code:
 ```
-name resolution(1) < type check + infer(2)
-name resolution(1)  < eliminating name shadowing(3)
-name resolution(1)  < closure conversion(4)
-type check + infer(2)   < closure conversion(4)
+name resolution(1)    < type infer(2)
+name resolution(1)    < eliminating name shadowing(3)
+name resolution(1)    < closure conversion(4)
+type infer(2)         < closure conversion(4)
 closure conversion(4) < eliminating lambdas(5)
 ```
 
 One solution for these compiler phases is
 ```
 1. name resolution(1)     <
-2. type infer + check(2)  <
+2. type infer(2)          <
 3. closure conversion(4)  <
 4. elim lambdas(5)        <
 5. elim name shadowing(3)
@@ -84,9 +88,9 @@ One solution for these compiler phases is
 Recall our goals:
 1. allow compiler writers to focus on only one phase, and no need to care about the
    dependent phases(e.g., when writing type inference, no need to care about name resolution)
-2. the separately implemented compiler phases can be composed into a big one
+2. the separately implemented compiler phases can be composited into a big one
 
-We can use an example to illustrate the obstacles, check following inference rule:
+We can use an example to illustrate the obstacles. Check following inference rule:
 
 ```
 LET:
@@ -95,18 +99,27 @@ LET:
           A |- (let x = e in e') : \tau
 ```
 
-In this case, we'd ask, what's the form of the type environment `A`?
+In this case, I'd ask, what's the form of the type environment `A`?
 
 This might be considered trivial in many cases, but is crucial in my concerns.
 
 Of course, we can maintain a map from `string` to `type`, and push and pop `string`-`type` pairs when inferencing.
 
 However, it'd be beneficial if we have already transformed the symbols
-(like `x` in `let x = e in e'`) into unique ones.
+(like `x` in `let x = e in e'`) into unique ones, which will then make `A_x \cup {x: \sigma}` necessary,
+and the inference becomes:
 
-In this way, the overlap between name resolution and type inference gets eliminated. Further, things like pushing and popping names are already done during name resolution, we don't have to repeat it. We do dependent phases separately, this is decoupling.
+```
+LET:
+          A |- e: \sigma  A |- e' : \tau
+     ---------------------------------------
+          A |- (let x = e in e') : \tau
+```
 
-However, the problem comes: How can we make sure the separately implemented compiler phases can got composed?
+
+In this way, the overlap between name resolution and type inference gets eliminated. Further, operations like pushing and popping names are already done during name resolution, we don't have to repeat it. We do dependent phases separately, things get decoupled.
+
+However, the problem comes: How can we make sure the separately implemented compiler phases can get composited?
 
 # Tagless Final
 
@@ -195,7 +208,7 @@ expr:
 ;
 ```
 
-Then we got something can be interpreted in various ways, instead of an AST!
+Then we got something that can be interpreted in various ways, instead of an AST!
 
 # Tagless Final For Compiler Phases
 
@@ -231,13 +244,13 @@ Recall the order of phases,
 
 ```
 1. name resolution(1)     <
-2. type infer + check(2)  <
+2. type infer(2)  <
 3. closure conversion(4)  <
 4. elim lambdas(5)        <
 5. elim name shadowing(3)
 ```
 
-**I guess, the `repr` is expanding bigger and bigger when performing the phases one by one?**
+**I guess, the `repr` is expanding bigger and bigger when passing the phases in order?**
 
 ```
 type repr = scope ->
@@ -248,17 +261,19 @@ type repr = scope * typ * closureinfo * lambdainfo * unique_name ->
 ...
 ```
 
-## Decoupling
+## Problems of Decoupling and Compositing
 
-However, if we're to implement a `SYM` with `type repr = scope * typ`,
+However, if we implement a `SYM` with `type repr = scope * typ`,
 
-- **Repetition, loss of decoupling**: we have to repeat ourselves to write code for `SYM with type repr = scope`,
+- **Repetition, loss of decoupling**: we have to repeat ourselves for writing code for `SYM with type repr = scope`. It seems impossible to reuse `SYM with type repr = scope` in `SYM with type repr = scope * typ`.
 
 - **Inflexibility, loss of compositing**: and further, the most severe thing is, **the order of phases gets fixed**,
   and if we misdesign the order of phases, we cannot compose things in a flexible style.
 
 
-To avoid above losses, just figure out a new abstraction on `SYM`:
+To avoid above losses, just figure out a new abstraction on `SYM`, called `FSYM`.
+
+## FSYM
 
 ```ocaml
 
@@ -273,7 +288,7 @@ module type FSYM = sig
    val lam  : o -> string -> r -> c
    val app  : o -> r -> r -> c
    val lit  : o -> litype -> string -> c
-   val var : o -> string -> c
+   val var  : o -> string -> c
 end
 
 module Grow (Base: SYM) (Incr: FSYM with type o = Base.repr): SYM with type repr = Incr.r = struct
@@ -287,6 +302,43 @@ module Grow (Base: SYM) (Incr: FSYM with type o = Base.repr): SYM with type repr
 end
 ```
 
-Then we find, to decouple and composite dependent compiler phases, we can use `FSYM`,
+We can use `FSYM` to decouple and composite dependent compiler phases,
 which is demonstrated in [Lamu0 by FSYM](https://github.com/thautwarm/plfp/blob/master/view-point-from-research-side/Lamu0.md).
 
+Besides, the functor `Grow` also has a function form taking advantage of the first class modules:
+
+```ocaml
+let grow = fun
+   (type o c r')
+   (module Base: SYM with type r = o)
+   (module Incr: FSYM with type r = r' and type c = c and type o = o) ->
+  (module struct
+   ..
+   end: SYM with type r = r')
+```
+
+## Laziness, for Mutually Dependencies
+
+Given 2 compiler phase `A` and `B`, there might be such a case:
+
+`A` depends on a semi-complete `B`, total-completion of `B` depends on a whole `A`, but `B`'s
+semi-completion can be done independently.
+
+```
+module AB = Grow(A)(B)
+
+(* including semi-completion of B *)
+let (repr_a, repr_b) = run (module AB) parsed_term
+```
+Assume `repr_a` and `repr_b` are both lazy,
+we can finish the semi-completion of `B` when calling `run`,
+and then
+```
+let repr_a = Lazy.force repr_a (* total completion of A *)
+let repr_b = Lazy.force repr_b (* total completion of B *)
+```
+## Example
+
+A more clean implementation of Tagless Final compiler is [`Lamu1`](https://github.com/thautwarm/plfp/blob/master/lamu1) instead of `Lamu0`.
+
+`Lamu1` extends `lamu0` with principal types.
