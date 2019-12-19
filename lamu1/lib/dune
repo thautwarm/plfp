@@ -1,3 +1,11 @@
+(ocamllex
+  (modules lexer))
+
+(menhir
+  (modules parser))
+
 (library
  (name lamu1)
  (libraries remu_ts remu_scope batteries))
+
+

@@ -1,3 +1,9 @@
+(ocamllex
+  (modules lamu0_lex))
+
+(menhir
+  (modules lamu0_parser))
+
 (library
  (name lamu0)
  (libraries remu_ts remu_scope)

@@ -79,4 +79,7 @@ let f: forall 'a. 'a -> 'a =
    fn x => x
 in let g = f 1 in g;;
 => expr0 : ^int
+
+let y : str = 1 in y;;
+Fatal error: exception Lamu1.Phases.TypeError
 ```
