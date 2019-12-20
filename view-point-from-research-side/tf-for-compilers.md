@@ -321,12 +321,13 @@ let grow = fun
    end: SYM with type r = r')
 ```
 
-### Laziness, for Mutually Dependencies
+### Laziness, for Mutual Dependencies
 
-Given 2 compiler phase `A` and `B`, there might be such a case:
+Given 2 compiler phases `A` and `B`, there might be such a case:
 
-`A` depends on a semi-complete `B`, total-completion of `B` depends on a whole `A`, but `B`'s
-semi-completion can be done independently.
+- `A` depends on a semi-complete `B`,
+- total-completion of `B` depends on a whole `A`, and
+- `B`'s semi-completion can be done independently.
 
 ```ocaml
 module AB = Grow(A)(B)
@@ -337,7 +338,7 @@ let (repr_a, repr_b) = run (module AB) parsed_term
 Assume `repr_a` and `repr_b` are both lazy,
 we can finish the semi-completion of `B` when calling `run`,
 and then
-```
+```ocaml
 let repr_a = Lazy.force repr_a (* total completion of A *)
 let repr_b = Lazy.force repr_b (* total completion of B *)
 ```
