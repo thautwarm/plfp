@@ -1,6 +1,6 @@
 # Tagless Final For Writing Compilers
 
-Writing a compiler could consists of numerous steps.
+Writing a compiler could consist of numerous steps.
 
 Therefore, a solution to allow compiler writers to
 - merely focus on only one step of the whole compilation at one time,
