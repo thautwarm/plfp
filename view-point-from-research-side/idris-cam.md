@@ -123,7 +123,7 @@ Several problems got raised due to the differences of programming languages:
 4. There're still so many constructs in `ComIR`, each of which needs a rule for code generation. It'll be
    beneficial if we can minimize the constructs in `ComIR`.
 
-## In WIP
+## Solutions to 4 Problems
 
 To address the 4 problems aforementioned, we're working in progress on the following 4 parts.
 
