@@ -48,3 +48,4 @@ Hello, here're my presentations, for introducing interestings stuffs of Programm
         let y : str = 1 in y;;
         Fatal error: exception Lamu1.Phases.TypeError
     ```
+ 3. [Julia Counts for PL Researchers](https://thautwarm.github.io/Site-32/PL/elaborating-julia.html), for FP seminar of our Lab in 04/02/2020.
